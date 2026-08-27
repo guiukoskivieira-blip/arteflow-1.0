@@ -29,7 +29,12 @@ import { LocalStorageRequirementRepository } from '../repositories/localStorageR
 import { LocalStorageReservationRepository } from '../repositories/localStorageReservationRepository';
 import { LocalStorageMovementRepository } from '../repositories/localStorageMovementRepository';
 import { OrderService, CreateManualOrderInput } from '../services/orderService';
-import { JobService } from '../services/jobService';
+import {
+  JobService,
+  TransitionProductionJobStageInput,
+  canTransitionStage,
+  TransitionCheckResult,
+} from '../services/jobService';
 import {
   InventoryService,
   CreateMaterialInput,
@@ -48,7 +53,6 @@ export type AppPage =
   | 'purchasing'
   | 'financial'
   | 'dispatch'
-  | 'team'
   | 'settings';
 
 export interface FeedbackNotification {
@@ -111,9 +115,11 @@ interface ArteFlowContextType {
 
   // Actions Pedidos e Produção
   createManualOrder: (input: Omit<CreateManualOrderInput, 'organizationId' | 'authorId' | 'authorName'>) => Promise<Order>;
-  moveJobStage: (jobId: string, targetStageId: string) => Promise<void>;
+  transitionProductionJobStage: (input: Omit<TransitionProductionJobStageInput, 'userId' | 'userName'>) => Promise<ProductionJob>;
+  canJobTransitionTo: (job: ProductionJob, targetStageId: string) => TransitionCheckResult;
+  moveJobStage: (jobId: string, targetStageId: string, reversionReason?: string) => Promise<void>;
   moveJobNext: (jobId: string) => Promise<void>;
-  moveJobPrev: (jobId: string) => Promise<void>;
+  moveJobPrev: (jobId: string, reversionReason?: string) => Promise<void>;
   updateArtworkGate: (jobId: string, gate: ArtworkGate, note?: string) => Promise<void>;
   updateMaterialGate: (jobId: string, gate: MaterialGate, note?: string) => Promise<void>;
   updateFinancialGate: (jobId: string, gate: FinancialGate, note?: string) => Promise<void>;
@@ -218,8 +224,8 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     [orderRepo, jobRepo, eventRepo]
   );
   const jobService = useMemo(
-    () => new JobService(jobRepo, eventRepo),
-    [jobRepo, eventRepo]
+    () => new JobService(jobRepo, eventRepo, requirementRepo),
+    [jobRepo, eventRepo, requirementRepo]
   );
   const inventoryService = useMemo(
     () =>
@@ -438,44 +444,93 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     [orderService, organization.id, currentUser, reloadAll]
   );
 
-  const moveJobStage = useCallback(
-    async (jobId: string, targetStageId: string) => {
-      await jobService.moveStage(
-        organization.id,
-        jobId,
-        targetStageId,
-        stages,
-        { id: currentUser.id, name: currentUser.name }
-      );
-      await reloadAll();
+  const transitionProductionJobStage = useCallback(
+    async (input: Omit<TransitionProductionJobStageInput, 'userId' | 'userName'>) => {
+      try {
+        const updated = await jobService.transitionProductionJobStage(
+          organization.id,
+          {
+            ...input,
+            userId: currentUser.id,
+            userName: currentUser.name,
+          },
+          stages
+        );
+        await reloadAll();
+
+        const targetStage = stages.find((s) => s.id === input.targetStageId);
+        setFeedbackNotification({
+          type: 'success',
+          title: 'Etapa Atualizada',
+          message: `OP ${updated.jobCode} movida para "${targetStage?.name || input.targetStageId}".`,
+        });
+
+        return updated;
+      } catch (err: any) {
+        setFeedbackNotification({
+          type: 'error',
+          title: 'Movimentação Não Permitida',
+          message: err?.message || 'Não foi possível mover a OP.',
+        });
+        throw err;
+      }
     },
-    [jobService, organization.id, stages, currentUser, reloadAll]
+    [jobService, organization.id, currentUser, stages, reloadAll]
+  );
+
+  const canJobTransitionTo = useCallback(
+    (job: ProductionJob, targetStageId: string) => {
+      const hasReqs = requirements.some((r) => r.productionJobId === job.id);
+      return canTransitionStage(job, targetStageId, stages, hasReqs);
+    },
+    [stages, requirements]
+  );
+
+  const moveJobStage = useCallback(
+    async (jobId: string, targetStageId: string, reversionReason?: string) => {
+      await transitionProductionJobStage({
+        productionJobId: jobId,
+        targetStageId,
+        method: 'BUTTON',
+        reversionReason,
+      });
+    },
+    [transitionProductionJobStage]
   );
 
   const moveJobNext = useCallback(
     async (jobId: string) => {
-      await jobService.moveNextStage(
-        organization.id,
-        jobId,
-        stages,
-        { id: currentUser.id, name: currentUser.name }
-      );
-      await reloadAll();
+      const job = jobs.find((j) => j.id === jobId);
+      if (!job) return;
+      const sortedStages = [...stages].sort((a, b) => a.sequence - b.sequence);
+      const currentIndex = sortedStages.findIndex((s) => s.id === job.stageId);
+      if (currentIndex < 0 || currentIndex >= sortedStages.length - 1) return;
+      const nextStage = sortedStages[currentIndex + 1];
+      await transitionProductionJobStage({
+        productionJobId: jobId,
+        targetStageId: nextStage.id,
+        method: 'BUTTON',
+      });
     },
-    [jobService, organization.id, stages, currentUser, reloadAll]
+    [jobs, stages, transitionProductionJobStage]
   );
 
   const moveJobPrev = useCallback(
-    async (jobId: string) => {
-      await jobService.movePreviousStage(
-        organization.id,
-        jobId,
-        stages,
-        { id: currentUser.id, name: currentUser.name }
-      );
-      await reloadAll();
+    async (jobId: string, reversionReason?: string) => {
+      const job = jobs.find((j) => j.id === jobId);
+      if (!job) return;
+      const sortedStages = [...stages].sort((a, b) => a.sequence - b.sequence);
+      const currentIndex = sortedStages.findIndex((s) => s.id === job.stageId);
+      if (currentIndex <= 0) return;
+      const prevStage = sortedStages[currentIndex - 1];
+      await transitionProductionJobStage({
+        productionJobId: jobId,
+        targetStageId: prevStage.id,
+        method: 'BUTTON',
+        reversionReason,
+      });
     },
-    [jobService, organization.id, stages, currentUser, reloadAll]
+    [jobs, stages, transitionProductionJobStage]
   );
 
   const updateArtworkGate = useCallback(
@@ -895,6 +950,8 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setFeedbackNotification,
         clearFeedbackNotification,
         createManualOrder,
+        transitionProductionJobStage,
+        canJobTransitionTo,
         moveJobStage,
         moveJobNext,
         moveJobPrev,

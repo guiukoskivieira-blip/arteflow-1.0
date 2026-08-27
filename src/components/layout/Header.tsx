@@ -29,8 +29,6 @@ export const Header: React.FC = () => {
         return 'Financeiro Operacional';
       case 'dispatch':
         return 'Expedição & Logística';
-      case 'team':
-        return 'Equipe & Permissões';
       case 'settings':
         return 'Configurações do Sistema';
       default:

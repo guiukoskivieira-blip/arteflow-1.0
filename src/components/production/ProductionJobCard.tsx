@@ -1,4 +1,5 @@
 import React from 'react';
+import { useDraggable } from '@dnd-kit/core';
 import { ProductionJob } from '../../types/domain';
 import { useArteFlow } from '../../context/ArteFlowContext';
 import { GateBadge } from '../common/GateBadge';
@@ -12,26 +13,44 @@ import {
   AlertTriangle,
   User,
   Eye,
+  GripVertical,
 } from 'lucide-react';
 
 interface ProductionJobCardProps {
   job: ProductionJob;
+  isOverlay?: boolean;
+  onRequestReversionReason?: (job: ProductionJob) => void;
 }
 
-export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({ job }) => {
+export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({
+  job,
+  isOverlay = false,
+  onRequestReversionReason,
+}) => {
   const {
     stages,
     moveJobNext,
     moveJobPrev,
     setSelectedJob,
     setIsJobDrawerOpen,
+    canJobTransitionTo,
   } = useArteFlow();
+
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: job.id,
+    data: { job },
+    disabled: isOverlay,
+  });
 
   const sortedStages = [...stages].sort((a, b) => a.sequence - b.sequence);
   const currentStageIndex = sortedStages.findIndex((s) => s.id === job.stageId);
 
   const isFirstStage = currentStageIndex <= 0;
   const isLastStage = currentStageIndex >= sortedStages.length - 1;
+  const currentStage = sortedStages[currentStageIndex];
+  const nextStage = !isLastStage ? sortedStages[currentStageIndex + 1] : null;
+
+  const nextTransitionCheck = nextStage ? canJobTransitionTo(job, nextStage.id) : { allowed: false, reason: 'Última etapa' };
 
   const blockDetails = getJobBlockDetails(job);
   const overdue = isJobOverdue(job, stages);
@@ -44,28 +63,59 @@ export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({ job }) => 
 
   const handlePrevStage = (e: React.MouseEvent) => {
     e.stopPropagation();
-    moveJobPrev(job.id);
+    if (isFirstStage) return;
+
+    if (currentStage?.id === 'stage-delivered') {
+      if (onRequestReversionReason) {
+        onRequestReversionReason(job);
+      } else {
+        moveJobPrev(job.id);
+      }
+    } else {
+      moveJobPrev(job.id);
+    }
   };
 
   const handleNextStage = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isLastStage) return;
     moveJobNext(job.id);
   };
 
   return (
     <div
+      ref={setNodeRef}
       onClick={handleOpenDetails}
-      className={`bg-white rounded-xl border transition-all duration-200 hover:shadow-md cursor-pointer flex flex-col p-3.5 space-y-2.5 relative group ${
-        blockDetails.isBlocked
+      className={`bg-white rounded-xl border transition-all duration-200 hover:shadow-md cursor-pointer flex flex-col p-3.5 space-y-2.5 relative group select-none ${
+        isOverlay
+          ? 'shadow-2xl ring-2 ring-teal-500 border-teal-400 rotate-1 scale-[1.02] opacity-95 z-50 cursor-grabbing'
+          : isDragging
+          ? 'opacity-40 border-dashed border-teal-400'
+          : blockDetails.isBlocked
           ? 'border-red-300 ring-1 ring-red-400/30'
           : overdue
           ? 'border-amber-300 ring-1 ring-amber-400/30'
           : 'border-slate-200/90 hover:border-teal-300'
       }`}
     >
-      {/* Header: OP Code, Order Code, Origin, Priority */}
+      {/* Header: Drag Handle, OP Code, Order Code, Origin, Priority */}
       <div className="flex items-center justify-between gap-1.5 flex-wrap">
         <div className="flex items-center gap-1.5">
+          {/* Alça de Arraste (Drag Handle) com Suporte a Mouse, Toque e Teclado */}
+          {!isOverlay && (
+            <button
+              type="button"
+              {...attributes}
+              {...listeners}
+              onClick={(e) => e.stopPropagation()}
+              className="p-1 -ml-1 text-slate-400 hover:text-teal-600 rounded hover:bg-teal-50 cursor-grab active:cursor-grabbing focus:outline-none focus:ring-2 focus:ring-teal-500"
+              aria-label={`Mover ${job.jobCode} entre etapas`}
+              title="Arraste para mover entre etapas ou use o teclado (Espaço/Enter)"
+            >
+              <GripVertical className="w-4 h-4 stroke-[2.2]" />
+            </button>
+          )}
+
           <span className="font-extrabold text-xs text-slate-900 font-mono tracking-tight">
             {job.jobCode}
           </span>
@@ -173,7 +223,10 @@ export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({ job }) => 
 
         <button
           type="button"
-          onClick={handleOpenDetails}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleOpenDetails();
+          }}
           className="p-1 text-slate-400 hover:text-teal-600 rounded hover:bg-teal-50"
           title="Ver detalhes da OP"
         >
@@ -183,13 +236,21 @@ export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({ job }) => 
         <button
           type="button"
           onClick={handleNextStage}
-          disabled={isLastStage}
-          className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold transition-colors ${
-            isLastStage
-              ? 'text-slate-300 cursor-not-allowed'
-              : 'text-teal-700 bg-teal-50 hover:bg-teal-100 hover:text-teal-800'
+          disabled={isLastStage || !nextTransitionCheck.allowed}
+          className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold transition-colors ${
+            isLastStage || !nextTransitionCheck.allowed
+              ? 'text-slate-300 bg-slate-50 cursor-not-allowed'
+              : 'bg-teal-50 text-teal-700 hover:bg-teal-100 hover:text-teal-800'
           }`}
-          title={isLastStage ? 'Última etapa' : 'Avançar para próxima etapa'}
+          title={
+            isLastStage
+              ? 'Última etapa'
+              : !nextTransitionCheck.allowed
+              ? nextTransitionCheck.reason?.startsWith('Movimentação bloqueada')
+                ? nextTransitionCheck.reason
+                : `Bloqueado: ${nextTransitionCheck.reason}`
+              : 'Avançar para próxima etapa'
+          }
         >
           <span>Avançar</span>
           <ChevronRight className="w-3.5 h-3.5" />

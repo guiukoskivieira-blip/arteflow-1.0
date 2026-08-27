@@ -93,8 +93,8 @@ describe('ArteFlow — Regras de Domínio Operacional (Fase 1)', () => {
 
     const [jobA, jobB] = jobs;
 
-    // Move Job A para 'stage-in-production' e atualiza gate de arte para APPROVED
-    await jobService.moveStage(orgId, jobA.id, 'stage-in-production', stages, { id: 'u1', name: 'Operador' });
+    // Move Job A para 'stage-awaiting-file' e atualiza gate de arte para APPROVED
+    await jobService.moveStage(orgId, jobA.id, 'stage-awaiting-file', stages, { id: 'u1', name: 'Operador' });
     await jobService.updateArtworkGate(orgId, jobA.id, 'APPROVED', { id: 'u1', name: 'Operador' });
     await jobService.updatePriority(orgId, jobA.id, 'URGENT', { id: 'u1', name: 'Operador' });
 
@@ -102,7 +102,7 @@ describe('ArteFlow — Regras de Domínio Operacional (Fase 1)', () => {
     const freshA = await jobRepo.getById(orgId, jobA.id);
     const freshB = await jobRepo.getById(orgId, jobB.id);
 
-    expect(freshA?.stageId).toBe('stage-in-production');
+    expect(freshA?.stageId).toBe('stage-awaiting-file');
     expect(freshA?.artworkGate).toBe('APPROVED');
     expect(freshA?.priority).toBe('URGENT');
 
@@ -133,8 +133,8 @@ describe('ArteFlow — Regras de Domínio Operacional (Fase 1)', () => {
     expect(events.length).toBe(1);
     expect(events[0].eventType).toBe('JOB_CREATED');
 
-    // Transição 1: Mudança de etapa
-    await jobService.moveStage(orgId, job.id, 'stage-prepress', stages, { id: 'user-prep', name: 'Ana Designer' });
+    // Transição 1: Mudança de etapa para etapa adjacente
+    await jobService.moveStage(orgId, job.id, 'stage-awaiting-file', stages, { id: 'user-prep', name: 'Ana Designer' });
 
     // Transição 2: Alteração de Gate
     await jobService.updateMaterialGate(orgId, job.id, 'MISSING', { id: 'user-prep', name: 'Ana Designer' }, 'Falta vinil brilho');
@@ -174,13 +174,15 @@ describe('ArteFlow — Regras de Domínio Operacional (Fase 1)', () => {
     });
 
     // Modifica nome da etapa no banco sem quebrar o ID
-    const stageModified = { ...stages[6], name: 'Impressão Pesada Modificada' };
-    await stageRepo.save(orgId, stageModified);
+    const updatedStages = stages.map((s) =>
+      s.id === 'stage-awaiting-file' ? { ...s, name: 'Aguardando Arquivos Modificada' } : s
+    );
+    await stageRepo.saveMany(orgId, updatedStages);
 
-    await jobService.moveStage(orgId, jobs[0].id, 'stage-in-production', [stageModified], { id: 'u1', name: 'Op' });
+    await jobService.moveStage(orgId, jobs[0].id, 'stage-awaiting-file', updatedStages, { id: 'u1', name: 'Op' });
     const freshJob = await jobRepo.getById(orgId, jobs[0].id);
 
-    expect(freshJob?.stageId).toBe('stage-in-production');
+    expect(freshJob?.stageId).toBe('stage-awaiting-file');
   });
 
   // Requisito 7: Registros demo e user são diferenciados

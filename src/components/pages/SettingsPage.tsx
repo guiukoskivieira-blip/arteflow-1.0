@@ -7,6 +7,7 @@ import {
   Trash2,
   CheckCircle2,
   Server,
+  Users,
 } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
@@ -49,6 +50,14 @@ export const SettingsPage: React.FC = () => {
           <span>{feedback}</span>
         </div>
       )}
+
+      {/* Discrete Prexyon Alignment Notice */}
+      <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 text-xs text-slate-600 flex items-start gap-3">
+        <Users className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
+        <p className="leading-relaxed">
+          Usuários, equipes e permissões serão administrados centralmente pela Prexyon quando o modo conectado estiver disponível.
+        </p>
+      </div>
 
       {/* Organization Card */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-2xs p-5 space-y-4">

@@ -8,7 +8,6 @@ import {
   ShoppingBag,
   DollarSign,
   Truck,
-  Users,
   Settings,
   Layers,
   Sparkles,
@@ -30,7 +29,6 @@ const navItems: NavItem[] = [
   { id: 'purchasing', label: 'Compras', icon: ShoppingBag, badge: 'Fase 2' },
   { id: 'financial', label: 'Financeiro', icon: DollarSign, badge: 'Fase 2' },
   { id: 'dispatch', label: 'Expedição', icon: Truck, badge: 'Fase 2' },
-  { id: 'team', label: 'Equipe e Permissões', icon: Users, badge: 'Fase 3' },
   { id: 'settings', label: 'Configurações', icon: Settings },
 ];
 

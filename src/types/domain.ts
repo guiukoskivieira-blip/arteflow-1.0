@@ -148,7 +148,11 @@ export interface ProductionEvent {
   eventType: EventType;
   fromValue?: string;
   toValue?: string;
+  stageFromId?: string;
+  stageToId?: string;
+  method?: 'BUTTON' | 'DRAG_DROP' | 'KEYBOARD';
   description: string;
+  reason?: string;
   authorId: string;
   authorName: string;
   timestamp: string;

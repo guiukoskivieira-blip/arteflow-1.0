@@ -8,7 +8,6 @@ import { InventoryPage } from './components/pages/InventoryPage';
 import { PurchasingPage } from './components/pages/PurchasingPage';
 import { FinancialPage } from './components/pages/FinancialPage';
 import { DispatchPage } from './components/pages/DispatchPage';
-import { TeamPage } from './components/pages/TeamPage';
 import { SettingsPage } from './components/pages/SettingsPage';
 
 const MainContent: React.FC = () => {
@@ -29,12 +28,10 @@ const MainContent: React.FC = () => {
       return <FinancialPage />;
     case 'dispatch':
       return <DispatchPage />;
-    case 'team':
-      return <TeamPage />;
     case 'settings':
       return <SettingsPage />;
     default:
-      return <ProductionPage />;
+      return <OverviewPage />;
   }
 };
 

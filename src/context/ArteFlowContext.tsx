@@ -13,7 +13,8 @@ import {
   Priority,
 } from '../types/domain';
 import { DEMO_USERS } from '../domain/constants';
-import { getDemoSeedData, DEMO_ORGANIZATION } from '../domain/seed';
+import { getDemoSeedData, DEMO_ORGANIZATION, getInitialStages } from '../domain/seed';
+import { storageKeys, CURRENT_SEED_VERSION, SeedState } from '../repositories/storageKeys';
 import { LocalStorageOrderRepository } from '../repositories/localStorageOrderRepository';
 import { LocalStorageJobRepository } from '../repositories/localStorageJobRepository';
 import { LocalStorageStageRepository } from '../repositories/localStorageStageRepository';
@@ -31,6 +32,12 @@ export type AppPage =
   | 'dispatch'
   | 'team'
   | 'settings';
+
+export interface FeedbackNotification {
+  type: 'success' | 'info' | 'error';
+  title: string;
+  message: string;
+}
 
 interface ArteFlowContextType {
   organization: Organization;
@@ -59,6 +66,9 @@ interface ArteFlowContextType {
   setActivePage: (page: AppPage) => void;
   isMobileDrawerOpen: boolean;
   setIsMobileDrawerOpen: (open: boolean) => void;
+  feedbackNotification: FeedbackNotification | null;
+  setFeedbackNotification: (notification: FeedbackNotification | null) => void;
+  clearFeedbackNotification: () => void;
 
   // Actions
   createManualOrder: (input: Omit<CreateManualOrderInput, 'organizationId' | 'authorId' | 'authorName'>) => Promise<Order>;
@@ -73,7 +83,9 @@ interface ArteFlowContextType {
   updateJobDeadline: (jobId: string, deadlineISO: string) => Promise<void>;
   addJobNote: (jobId: string, note: string) => Promise<void>;
   getJobEvents: (jobId: string) => Promise<ProductionEvent[]>;
+  resetDemoEnvironment: () => Promise<void>;
   resetToDemoSeed: () => Promise<void>;
+  clearOperationalData: () => Promise<void>;
   clearAllData: () => Promise<void>;
   reloadAll: () => Promise<void>;
 }
@@ -107,6 +119,7 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [activePage, setActivePage] = useState<AppPage>('production');
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [feedbackNotification, setFeedbackNotification] = useState<FeedbackNotification | null>(null);
 
   // Instancia repositórios e serviços
   const orderRepo = useMemo(() => new LocalStorageOrderRepository(), []);
@@ -123,16 +136,61 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     [jobRepo, eventRepo]
   );
 
+  const clearFeedbackNotification = useCallback(() => {
+    setFeedbackNotification(null);
+  }, []);
+
   const reloadAll = useCallback(async () => {
     const orgId = organization.id;
+    const rawVersion = typeof window !== 'undefined' && window.localStorage
+      ? window.localStorage.getItem(storageKeys.seedVersion(orgId))
+      : null;
+    const rawState = typeof window !== 'undefined' && window.localStorage
+      ? (window.localStorage.getItem(storageKeys.seedState(orgId)) as SeedState | null)
+      : null;
 
     let loadedStages = await stageRepo.list(orgId);
     let loadedOrders = await orderRepo.list(orgId);
     let loadedJobs = await jobRepo.list(orgId);
     let loadedEvents = await eventRepo.listAll(orgId);
 
-    // Se estiver totalmente vazio pela primeira vez, inicializa com seed demonstrativo
-    if (loadedStages.length === 0 && loadedOrders.length === 0 && loadedJobs.length === 0) {
+    const hasUserData =
+      loadedOrders.some((o) => o.dataOrigin === 'user') ||
+      loadedJobs.some((j) => j.dataOrigin === 'user');
+
+    // Regra 4: Limpeza intencional preservada
+    if (rawState === 'INTENTIONALLY_CLEARED') {
+      // Estado limpo intencionalmente: nunca recria demos
+      if (loadedStages.length === 0) {
+        const initialStages = getInitialStages(orgId);
+        await stageRepo.saveMany(orgId, initialStages);
+        loadedStages = initialStages;
+      }
+    } else if (hasUserData) {
+      // Regra 3: Estado com dados user (nunca injeta demos, preserva dados user)
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(storageKeys.seedVersion(orgId), String(CURRENT_SEED_VERSION));
+        window.localStorage.setItem(storageKeys.seedState(orgId), 'APPLIED');
+      }
+      if (loadedStages.length === 0) {
+        const initialStages = getInitialStages(orgId);
+        await stageRepo.saveMany(orgId, initialStages);
+        loadedStages = initialStages;
+      }
+    } else if (rawState === 'APPLIED') {
+      // Regra 6: Estado já aplicado normalmente (não duplica)
+      if (loadedStages.length === 0) {
+        const initialStages = getInitialStages(orgId);
+        await stageRepo.saveMany(orgId, initialStages);
+        loadedStages = initialStages;
+      }
+    } else if (
+      // Regra 2: Estado intermediário defeituoso confirmado (seedVersion === '2', seedState ausente, sem pedidos/OPs)
+      (rawVersion === String(CURRENT_SEED_VERSION) && rawState === null && loadedOrders.length === 0 && loadedJobs.length === 0) ||
+      // Regra 1: Instalação totalmente nova (sem seedVersion, sem seedState, storage vazio)
+      (rawVersion === null && rawState === null && loadedOrders.length === 0 && loadedJobs.length === 0)
+    ) {
+      // Executa seed demonstrativo inicial
       const seed = getDemoSeedData(orgId);
       await stageRepo.saveMany(orgId, seed.stages);
       for (const ord of seed.orders) {
@@ -140,6 +198,11 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       await jobRepo.saveMany(orgId, seed.jobs);
       await eventRepo.appendMany(orgId, seed.events);
+
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(storageKeys.seedVersion(orgId), String(CURRENT_SEED_VERSION));
+        window.localStorage.setItem(storageKeys.seedState(orgId), 'APPLIED');
+      }
 
       loadedStages = seed.stages;
       loadedOrders = seed.orders;
@@ -192,6 +255,15 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         authorName: currentUser.name,
       });
       await reloadAll();
+
+      setFeedbackNotification({
+        type: 'success',
+        title: 'Pedido e OPs Criados com Sucesso',
+        message: `Pedido ${result.order.orderNumber} e ${result.jobs.length} ${
+          result.jobs.length === 1 ? 'Ordem de Produção' : 'Ordens de Produção'
+        } gerados no fluxo.`,
+      });
+
       return result.order;
     },
     [orderService, organization.id, currentUser, reloadAll]
@@ -338,7 +410,8 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     [eventRepo, organization.id]
   );
 
-  const resetToDemoSeed = useCallback(async () => {
+  // Regra 5: Restauração explícita: limpa operacionais, recria demos, grava seedVersion e seedState = APPLIED
+  const resetDemoEnvironment = useCallback(async () => {
     const orgId = organization.id;
     await orderRepo.clear(orgId);
     await jobRepo.clear(orgId);
@@ -353,17 +426,32 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     await jobRepo.saveMany(orgId, seed.jobs);
     await eventRepo.appendMany(orgId, seed.events);
 
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(storageKeys.seedVersion(orgId), String(CURRENT_SEED_VERSION));
+      window.localStorage.setItem(storageKeys.seedState(orgId), 'APPLIED');
+    }
+
     await reloadAll();
   }, [organization.id, orderRepo, jobRepo, stageRepo, eventRepo, reloadAll]);
 
-  const clearAllData = useCallback(async () => {
+  const resetToDemoSeed = resetDemoEnvironment;
+
+  // Regra 4: Limpeza operacional intencional: remove operacionais, preserva etapas, grava seedVersion e seedState = INTENTIONALLY_CLEARED
+  const clearOperationalData = useCallback(async () => {
     const orgId = organization.id;
     await orderRepo.clear(orgId);
     await jobRepo.clear(orgId);
-    await stageRepo.clear(orgId);
     await eventRepo.clear(orgId);
+
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(storageKeys.seedVersion(orgId), String(CURRENT_SEED_VERSION));
+      window.localStorage.setItem(storageKeys.seedState(orgId), 'INTENTIONALLY_CLEARED');
+    }
+
     await reloadAll();
-  }, [organization.id, orderRepo, jobRepo, stageRepo, eventRepo, reloadAll]);
+  }, [organization.id, orderRepo, jobRepo, eventRepo, reloadAll]);
+
+  const clearAllData = clearOperationalData;
 
   return (
     <ArteFlowContext.Provider
@@ -394,6 +482,9 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setActivePage,
         isMobileDrawerOpen,
         setIsMobileDrawerOpen,
+        feedbackNotification,
+        setFeedbackNotification,
+        clearFeedbackNotification,
         createManualOrder,
         moveJobStage,
         moveJobNext,
@@ -406,7 +497,9 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         updateJobDeadline,
         addJobNote,
         getJobEvents,
+        resetDemoEnvironment,
         resetToDemoSeed,
+        clearOperationalData,
         clearAllData,
         reloadAll,
       }}

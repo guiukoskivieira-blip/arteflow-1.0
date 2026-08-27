@@ -63,26 +63,38 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Right: Actions, Operator Selector, New Order Button */}
+      {/* Right: Actions, Honest Local Operator Selector, New Order Button */}
       <div className="flex items-center gap-2 md:gap-3">
-        {/* User Switcher (Demo Context) */}
-        <div className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200/80">
-          <UserCircle2 className="w-4 h-4 text-teal-600" />
-          <span className="text-xs text-slate-500 font-medium">Operador:</span>
-          <select
-            value={currentUser.id}
-            onChange={(e) => {
-              const selected = DEMO_USERS.find((u) => u.id === e.target.value);
-              if (selected) setCurrentUser(selected);
-            }}
-            className="text-xs font-semibold text-slate-800 bg-transparent border-none focus:ring-0 focus:outline-none cursor-pointer"
-          >
-            {DEMO_USERS.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.name} ({user.role})
-              </option>
-            ))}
-          </select>
+        {/* Honest Local Demo Operator Selector */}
+        <div
+          className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200/80"
+          title="Seletor de operador local demonstrativo para assinatura de eventos de auditoria (sem login/backend real nesta fase)"
+        >
+          <UserCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0" />
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400">
+                Operador Local (Demo):
+              </span>
+              <span className="text-[9px] px-1 bg-teal-50 text-teal-700 border border-teal-200 rounded font-semibold">
+                Sem Auth
+              </span>
+            </div>
+            <select
+              value={currentUser.id}
+              onChange={(e) => {
+                const selected = DEMO_USERS.find((u) => u.id === e.target.value);
+                if (selected) setCurrentUser(selected);
+              }}
+              className="text-xs font-semibold text-slate-800 bg-transparent border-none focus:ring-0 focus:outline-none cursor-pointer -ml-0.5"
+            >
+              {DEMO_USERS.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.name} ({user.role})
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Quick New Order Button */}

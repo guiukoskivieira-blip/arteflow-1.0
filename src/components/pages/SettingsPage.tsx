@@ -10,13 +10,13 @@ import {
 } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
-  const { organization, stages, resetToDemoSeed, clearAllData } = useArteFlow();
+  const { organization, stages, resetDemoEnvironment, clearOperationalData } = useArteFlow();
   const [feedback, setFeedback] = useState('');
 
   const handleResetDemo = async () => {
-    if (window.confirm('Deseja recarregar os dados demonstrativos do ArteFlow?')) {
-      await resetToDemoSeed();
-      setFeedback('Dados de demonstração restaurados com sucesso.');
+    if (window.confirm('Deseja restaurar o ambiente demonstrativo com o pedido e as duas OPs iniciais?')) {
+      await resetDemoEnvironment();
+      setFeedback('Ambiente de demonstração restaurado com sucesso.');
       setTimeout(() => setFeedback(''), 4000);
     }
   };
@@ -24,11 +24,11 @@ export const SettingsPage: React.FC = () => {
   const handleClear = async () => {
     if (
       window.confirm(
-        'Tem certeza que deseja apagar todos os pedidos, OPs e eventos do armazenamento local?'
+        'Tem certeza que deseja apagar todos os pedidos, OPs e eventos operacionais? O estado vazio será preservado na próxima recarga.'
       )
     ) {
-      await clearAllData();
-      setFeedback('Armazenamento local limpo com sucesso.');
+      await clearOperationalData();
+      setFeedback('Dados operacionais removidos com sucesso. O estado vazio foi preservado.');
       setTimeout(() => setFeedback(''), 4000);
     }
   };
@@ -157,9 +157,9 @@ export const SettingsPage: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-lg bg-slate-50 border border-slate-200">
           <div>
-            <h4 className="text-xs font-bold text-slate-800">Recarregar Demonstração Inicial</h4>
+            <h4 className="text-xs font-bold text-slate-800">Restaurar Ambiente Demo</h4>
             <p className="text-xs text-slate-500 mt-0.5">
-              Restaura o pedido demonstrativo com as duas OPs em etapas e gates distintos.
+              Restaura o pedido e as 2 OPs de demonstração e atualiza o marcador de versão de seed.
             </p>
           </div>
           <button
@@ -173,9 +173,9 @@ export const SettingsPage: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-lg bg-red-50/50 border border-red-200">
           <div>
-            <h4 className="text-xs font-bold text-red-900">Limpar Todos os Dados</h4>
+            <h4 className="text-xs font-bold text-red-900">Limpar Dados Operacionais</h4>
             <p className="text-xs text-red-700 mt-0.5">
-              Remove todos os pedidos, OPs e eventos do armazenamento do navegador desta organização.
+              Remove todos os pedidos, OPs e eventos. Mantém o marcador de seed ativo para que os dados demo não reapareçam na recarga.
             </p>
           </div>
           <button
@@ -183,7 +183,7 @@ export const SettingsPage: React.FC = () => {
             className="px-3 py-2 text-xs font-semibold text-red-700 bg-white hover:bg-red-50 border border-red-300 rounded-lg transition-colors flex items-center gap-1.5 self-start sm:self-auto"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Limpar Armazenamento</span>
+            <span>Limpar Dados Operacionais</span>
           </button>
         </div>
       </div>

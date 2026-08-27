@@ -1,7 +1,6 @@
 import { IWorkflowStageRepository } from '../types/repository';
 import { WorkflowStage } from '../types/domain';
 import { storageKeys } from './storageKeys';
-import { getInitialStages } from '../domain/seed';
 
 export class LocalStorageStageRepository implements IWorkflowStageRepository {
   private getStorage(): Storage | null {
@@ -13,24 +12,20 @@ export class LocalStorageStageRepository implements IWorkflowStageRepository {
 
   private readAll(organizationId: string): WorkflowStage[] {
     const storage = this.getStorage();
-    if (!storage) return getInitialStages(organizationId);
+    if (!storage) return [];
     try {
       const raw = storage.getItem(storageKeys.stages(organizationId));
       if (!raw) {
-        const initial = getInitialStages(organizationId);
-        this.writeAll(organizationId, initial);
-        return initial;
+        return [];
       }
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         return parsed.sort((a, b) => a.sequence - b.sequence);
       }
-      const initial = getInitialStages(organizationId);
-      this.writeAll(organizationId, initial);
-      return initial;
+      return [];
     } catch (e) {
       console.error(`Erro ao ler etapas para org ${organizationId}:`, e);
-      return getInitialStages(organizationId);
+      return [];
     }
   }
 

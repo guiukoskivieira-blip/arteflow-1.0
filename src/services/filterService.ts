@@ -4,7 +4,7 @@ import { isJobBlocked, isJobOverdue, isJobDueToday } from '../domain/jobStatus';
 export function filterProductionJobs(
   jobs: ProductionJob[],
   stages: WorkflowStage[],
-  filter: ProductionJobFilter,
+  filter: Partial<ProductionJobFilter>,
   referenceDate = new Date()
 ): ProductionJob[] {
   return jobs.filter((job) => {
@@ -47,61 +47,40 @@ export function filterProductionJobs(
       }
     }
 
-    // 6. Filtro por Prazo
+    // 6. Filtro por Prazo de Entrega
     if (filter.deadlineRange && filter.deadlineRange !== 'ALL') {
-      const overdue = isJobOverdue(job, stages, referenceDate);
-      const dueToday = isJobDueToday(job, referenceDate);
+      const isOverdue = isJobOverdue(job, stages, referenceDate);
+      const isToday = isJobDueToday(job, referenceDate);
 
-      if (filter.deadlineRange === 'OVERDUE' && !overdue) {
-        return false;
-      }
+      const jobDeadline = new Date(job.deadlineISO);
+      const diffDays = (jobDeadline.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24);
 
-      if (filter.deadlineRange === 'TODAY' && !dueToday) {
-        return false;
-      }
-
+      if (filter.deadlineRange === 'OVERDUE' && !isOverdue) return false;
+      if (filter.deadlineRange === 'TODAY' && !isToday) return false;
       if (filter.deadlineRange === 'THIS_WEEK') {
-        if (!job.deadlineISO) return false;
-        const deadline = new Date(job.deadlineISO);
-        const weekAhead = new Date(referenceDate);
-        weekAhead.setDate(weekAhead.getDate() + 7);
-        if (deadline < referenceDate && !overdue) return false;
-        if (deadline > weekAhead) return false;
+        if (isOverdue || diffDays > 7) return false;
       }
-
       if (filter.deadlineRange === 'FUTURE') {
-        if (overdue || dueToday) return false;
+        if (isOverdue || isToday || diffDays <= 7) return false;
       }
     }
 
-    // 7. Filtro por Status dos Gates / Bloqueio
+    // 7. Filtro por Status de Gates
     if (filter.gateStatus && filter.gateStatus !== 'ALL') {
-      const blocked = isJobBlocked(job);
+      const isBlocked = isJobBlocked(job);
 
-      if (filter.gateStatus === 'BLOCKED' && !blocked) {
-        return false;
-      }
-
-      if (filter.gateStatus === 'ARTWORK_PENDING') {
-        if (job.artworkGate !== 'NOT_RECEIVED' && job.artworkGate !== 'PENDING_REVIEW') return false;
-      }
-
-      if (filter.gateStatus === 'MATERIAL_MISSING') {
-        if (job.materialGate !== 'MISSING') return false;
-      }
-
-      if (filter.gateStatus === 'FINANCIAL_BLOCKED') {
-        if (job.financialGate !== 'BLOCKED') return false;
-      }
-
+      if (filter.gateStatus === 'BLOCKED' && !isBlocked) return false;
+      if (filter.gateStatus === 'ARTWORK_PENDING' && job.artworkGate !== 'PENDING_REVIEW') return false;
+      if (filter.gateStatus === 'MATERIAL_MISSING' && job.materialGate !== 'MISSING') return false;
+      if (filter.gateStatus === 'FINANCIAL_BLOCKED' && (job.financialGate !== 'BLOCKED' && job.financialGate !== 'DEPOSIT_PENDING')) return false;
       if (filter.gateStatus === 'ALL_RELEASED') {
-        if (job.artworkGate !== 'APPROVED' || job.materialGate !== 'AVAILABLE' || job.financialGate !== 'RELEASED') {
+        if (job.artworkGate !== 'APPROVED' || job.materialGate !== 'AVAILABLE' && job.materialGate !== 'RESERVED' || job.financialGate !== 'RELEASED') {
           return false;
         }
       }
     }
 
-    // 8. Filtro por DataOrigin
+    // 8. Filtro por Origem de Dados (Demo vs Usuário)
     if (filter.dataOrigin && filter.dataOrigin !== 'ALL') {
       if (job.dataOrigin !== filter.dataOrigin) return false;
     }

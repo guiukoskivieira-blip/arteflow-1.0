@@ -1,5 +1,5 @@
 /**
- * ArteFlow — Domínio e Tipos Estritos da Fase 1
+ * ArteFlow — Domínio e Tipos Estritos (Fase 1 e Fase 2A)
  * Gestão de Produção para Gráficas e Comunicação Visual
  */
 
@@ -26,7 +26,11 @@ export type EventType =
   | 'ASSIGNEE_CHANGED'
   | 'DEADLINE_CHANGED'
   | 'PRIORITY_CHANGED'
-  | 'NOTE_ADDED';
+  | 'NOTE_ADDED'
+  | 'REQUIREMENT_ADDED'
+  | 'MATERIAL_RESERVED'
+  | 'RESERVATION_RELEASED'
+  | 'MATERIAL_CONSUMED';
 
 export interface Organization {
   id: string;
@@ -148,16 +152,19 @@ export interface ProductionEvent {
   authorId: string;
   authorName: string;
   timestamp: string;
-  dataOrigin: DataOrigin;
+  dataOrigin?: DataOrigin;
 }
 
 export interface ProductionJobFilter {
-  searchQuery?: string;
-  stageId?: string;
-  priority?: Priority | 'ALL';
-  sector?: string | 'ALL';
-  assigneeId?: string | 'ALL';
-  deadlineRange?: 'ALL' | 'OVERDUE' | 'TODAY' | 'THIS_WEEK' | 'FUTURE';
-  gateStatus?: 'ALL' | 'BLOCKED' | 'ARTWORK_PENDING' | 'MATERIAL_MISSING' | 'FINANCIAL_BLOCKED' | 'ALL_RELEASED';
-  dataOrigin?: 'ALL' | 'demo' | 'user';
+  searchQuery: string;
+  stageId: string;
+  priority: string;
+  sector: string;
+  assigneeId: string;
+  deadlineRange: 'ALL' | 'OVERDUE' | 'TODAY' | 'THIS_WEEK' | 'FUTURE';
+  gateStatus: 'ALL' | 'BLOCKED' | 'ARTWORK_PENDING' | 'MATERIAL_MISSING' | 'FINANCIAL_BLOCKED' | 'ALL_RELEASED';
+  dataOrigin: 'ALL' | 'demo' | 'user';
 }
+
+// Re-exportações de tipos do módulo de inventário (Fase 2A)
+export * from './inventory';

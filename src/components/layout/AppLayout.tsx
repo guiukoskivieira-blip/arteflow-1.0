@@ -5,6 +5,10 @@ import { Header } from './Header';
 import { NewOrderModal } from '../orders/NewOrderModal';
 import { OrderDetailsModal } from '../orders/OrderDetailsModal';
 import { ProductionJobDrawer } from '../production/ProductionJobDrawer';
+import { NewMaterialModal } from '../inventory/NewMaterialModal';
+import { ReceiptModal } from '../inventory/ReceiptModal';
+import { StockAdjustmentModal } from '../inventory/StockAdjustmentModal';
+import { MaterialDetailsDrawer } from '../inventory/MaterialDetailsDrawer';
 import { useArteFlow } from '../../context/ArteFlowContext';
 import { CheckCircle2, X } from 'lucide-react';
 
@@ -61,6 +65,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <NewOrderModal />
       <OrderDetailsModal />
       <ProductionJobDrawer />
+      <NewMaterialModal />
+      <ReceiptModal />
+      <StockAdjustmentModal />
+      <MaterialDetailsDrawer />
     </div>
   );
 };

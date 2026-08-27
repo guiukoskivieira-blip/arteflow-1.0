@@ -6,6 +6,12 @@ import {
   WorkflowStage,
   ProductionEvent,
 } from '../types/domain';
+import {
+  InventoryMaterial,
+  ProductionMaterialRequirement,
+  StockReservation,
+  StockMovement,
+} from '../types/inventory';
 import { DEFAULT_ORGANIZATION_ID, INITIAL_WORKFLOW_STAGES, DEMO_USERS } from './constants';
 
 export const DEMO_ORGANIZATION: Organization = {
@@ -125,7 +131,7 @@ export function getDemoSeedData(organizationId: string = DEFAULT_ORGANIZATION_ID
     technicalNotes: item1.technicalNotes,
     stageId: 'stage-prepress', // Pré-impressão
     artworkGate: 'APPROVED',
-    materialGate: 'AVAILABLE',
+    materialGate: 'RESERVED', // Totalmente reservado
     financialGate: 'RELEASED',
     priority: 'HIGH',
     sector: item1.sector,
@@ -156,7 +162,7 @@ export function getDemoSeedData(organizationId: string = DEFAULT_ORGANIZATION_ID
     technicalNotes: item2.technicalNotes,
     stageId: 'stage-awaiting-material', // Aguardando material
     artworkGate: 'APPROVED',
-    materialGate: 'MISSING', // Bloqueia OP!
+    materialGate: 'MISSING', // Bloqueia OP por falta de fita dupla face!
     financialGate: 'DEPOSIT_PENDING',
     priority: 'MEDIUM',
     sector: item2.sector,
@@ -170,6 +176,246 @@ export function getDemoSeedData(organizationId: string = DEFAULT_ORGANIZATION_ID
     updatedAt: nowISO,
     dataOrigin: 'demo',
   };
+
+  // Materiais Demonstrativos (Fase 2A)
+  const mat1: InventoryMaterial = {
+    id: 'mat-demo-1',
+    organizationId,
+    sku: 'MAT-PAP-300',
+    name: 'Papel Couchê 300g Brilho 66x96cm',
+    category: 'Papéis & Cartões',
+    unit: 'SHEET',
+    stockOnHandMilli: 5000000, // 5000 folhas
+    minimumStockMilli: 1000000, // 1000 folhas
+    averageCostCents: 45, // R$ 0,45 / folha
+    supplierName: 'Distribuidora Papéis Brasil',
+    isActive: true,
+    dataOrigin: 'demo',
+    createdAt: '2026-08-20T08:00:00.000Z',
+    updatedAt: nowISO,
+  };
+
+  const mat2: InventoryMaterial = {
+    id: 'mat-demo-2',
+    organizationId,
+    sku: 'MAT-LON-440',
+    name: 'Lona Frontlight 440g Fosca 3,20m',
+    category: 'Lonas & Banners',
+    unit: 'SQUARE_METER',
+    stockOnHandMilli: 150000, // 150 m²
+    minimumStockMilli: 50000, // 50 m²
+    averageCostCents: 1800, // R$ 18,00 / m²
+    supplierName: 'Suprimentos Visuais SA',
+    isActive: true,
+    dataOrigin: 'demo',
+    createdAt: '2026-08-20T08:00:00.000Z',
+    updatedAt: nowISO,
+  };
+
+  const mat3: InventoryMaterial = {
+    id: 'mat-demo-3',
+    organizationId,
+    sku: 'MAT-TNT-ECO',
+    name: 'Tinta Eco Solvente Cyan Ultra',
+    category: 'Tintas & Solventes',
+    unit: 'LITER',
+    stockOnHandMilli: 8000, // 8 L
+    minimumStockMilli: 5000, // 5 L
+    averageCostCents: 12000, // R$ 120,00 / L
+    supplierName: 'Colors Digital Inks',
+    isActive: true,
+    dataOrigin: 'demo',
+    createdAt: '2026-08-20T08:00:00.000Z',
+    updatedAt: nowISO,
+  };
+
+  const mat4: InventoryMaterial = {
+    id: 'mat-demo-4',
+    organizationId,
+    sku: 'MAT-ILH-054',
+    name: 'Ilhós Metálico N° 54 Niquelado',
+    category: 'Acabamentos & Acessórios',
+    unit: 'UNIT',
+    stockOnHandMilli: 2000000, // 2000 un
+    minimumStockMilli: 500000, // 500 un
+    averageCostCents: 15, // R$ 0,15 / un
+    supplierName: 'Ferragens & Rebites Central',
+    isActive: true,
+    dataOrigin: 'demo',
+    createdAt: '2026-08-20T08:00:00.000Z',
+    updatedAt: nowISO,
+  };
+
+  const mat5: InventoryMaterial = {
+    id: 'mat-demo-5',
+    organizationId,
+    sku: 'MAT-FIT-001',
+    name: 'Fita Dupla Face Alta Fixação 19mm',
+    category: 'Acabamentos & Acessórios',
+    unit: 'METER',
+    stockOnHandMilli: 0, // 0 m — Esgotado / Em Falta!
+    minimumStockMilli: 50000, // 50 m
+    averageCostCents: 250, // R$ 2,50 / m
+    supplierName: 'Adesivos & Fitas Express',
+    isActive: true,
+    dataOrigin: 'demo',
+    createdAt: '2026-08-20T08:00:00.000Z',
+    updatedAt: nowISO,
+  };
+
+  const materials: InventoryMaterial[] = [mat1, mat2, mat3, mat4, mat5];
+
+  // Requisitos vinculados às OPs
+  const req1: ProductionMaterialRequirement = {
+    id: 'req-demo-001',
+    organizationId,
+    productionJobId: job1Id,
+    materialId: mat1.id,
+    materialSnapshot: {
+      sku: mat1.sku,
+      name: mat1.name,
+      unit: mat1.unit,
+      averageCostCents: mat1.averageCostCents,
+    },
+    requiredQuantityMilli: 500000, // 500 folhas
+    createdAt: '2026-08-25T14:30:00.000Z',
+    dataOrigin: 'demo',
+  };
+
+  const req2: ProductionMaterialRequirement = {
+    id: 'req-demo-002',
+    organizationId,
+    productionJobId: job2Id,
+    materialId: mat2.id,
+    materialSnapshot: {
+      sku: mat2.sku,
+      name: mat2.name,
+      unit: mat2.unit,
+      averageCostCents: mat2.averageCostCents,
+    },
+    requiredQuantityMilli: 3000, // 3 m²
+    createdAt: '2026-08-25T14:30:00.000Z',
+    dataOrigin: 'demo',
+  };
+
+  const req3: ProductionMaterialRequirement = {
+    id: 'req-demo-003',
+    organizationId,
+    productionJobId: job2Id,
+    materialId: mat4.id,
+    materialSnapshot: {
+      sku: mat4.sku,
+      name: mat4.name,
+      unit: mat4.unit,
+      averageCostCents: mat4.averageCostCents,
+    },
+    requiredQuantityMilli: 12000, // 12 un
+    createdAt: '2026-08-25T14:30:00.000Z',
+    dataOrigin: 'demo',
+  };
+
+  const req4: ProductionMaterialRequirement = {
+    id: 'req-demo-004',
+    organizationId,
+    productionJobId: job2Id,
+    materialId: mat5.id,
+    materialSnapshot: {
+      sku: mat5.sku,
+      name: mat5.name,
+      unit: mat5.unit,
+      averageCostCents: mat5.averageCostCents,
+    },
+    requiredQuantityMilli: 5000, // 5 m (Fita em falta)
+    createdAt: '2026-08-25T14:30:00.000Z',
+    dataOrigin: 'demo',
+  };
+
+  const requirements: ProductionMaterialRequirement[] = [req1, req2, req3, req4];
+
+  // Reserva ativa para OP 1
+  const res1: StockReservation = {
+    id: 'res-demo-001',
+    organizationId,
+    productionJobId: job1Id,
+    requirementId: req1.id,
+    materialId: mat1.id,
+    reservedQuantityMilli: 500000, // 500 folhas
+    status: 'ACTIVE',
+    createdAt: '2026-08-25T15:00:00.000Z',
+    updatedAt: '2026-08-25T15:00:00.000Z',
+    userId: DEMO_USERS[1].id,
+    userName: DEMO_USERS[1].name,
+  };
+
+  const reservations: StockReservation[] = [res1];
+
+  // Movimentações iniciais de estoque
+  const movements: StockMovement[] = [
+    {
+      id: 'mov-demo-001',
+      organizationId,
+      materialId: mat1.id,
+      type: 'RECEIPT',
+      quantityMilli: 5000000,
+      previousBalanceMilli: 0,
+      resultingBalanceMilli: 5000000,
+      unitCostCents: 45,
+      totalCostCents: 225000,
+      reason: 'Entrada de compra NF-e 4492',
+      createdAt: '2026-08-20T08:00:00.000Z',
+      userId: DEMO_USERS[0].id,
+      userName: DEMO_USERS[0].name,
+      dataOrigin: 'demo',
+    },
+    {
+      id: 'mov-demo-002',
+      organizationId,
+      materialId: mat2.id,
+      type: 'RECEIPT',
+      quantityMilli: 150000,
+      previousBalanceMilli: 0,
+      resultingBalanceMilli: 150000,
+      unitCostCents: 1800,
+      totalCostCents: 270000,
+      reason: 'Entrada de compra NF-e 4495',
+      createdAt: '2026-08-20T08:30:00.000Z',
+      userId: DEMO_USERS[0].id,
+      userName: DEMO_USERS[0].name,
+      dataOrigin: 'demo',
+    },
+    {
+      id: 'mov-demo-003',
+      organizationId,
+      materialId: mat3.id,
+      type: 'RECEIPT',
+      quantityMilli: 8000,
+      previousBalanceMilli: 0,
+      resultingBalanceMilli: 8000,
+      unitCostCents: 12000,
+      totalCostCents: 96000,
+      reason: 'Entrada de reposição de tintas',
+      createdAt: '2026-08-20T09:00:00.000Z',
+      userId: DEMO_USERS[0].id,
+      userName: DEMO_USERS[0].name,
+      dataOrigin: 'demo',
+    },
+    {
+      id: 'mov-demo-004',
+      organizationId,
+      materialId: mat4.id,
+      type: 'RECEIPT',
+      quantityMilli: 2000000,
+      previousBalanceMilli: 0,
+      resultingBalanceMilli: 2000000,
+      unitCostCents: 15,
+      totalCostCents: 30000,
+      reason: 'Entrada pacote fechado ilhoses',
+      createdAt: '2026-08-20T09:30:00.000Z',
+      userId: DEMO_USERS[0].id,
+      userName: DEMO_USERS[0].name,
+      dataOrigin: 'demo',
+    },
+  ];
 
   const events: ProductionEvent[] = [
     {
@@ -211,6 +457,17 @@ export function getDemoSeedData(organizationId: string = DEFAULT_ORGANIZATION_ID
       dataOrigin: 'demo',
     },
     {
+      id: 'evt-demo-3b',
+      jobId: job1Id,
+      organizationId,
+      eventType: 'MATERIAL_RESERVED',
+      description: 'Reserva realizada: 500 fl de Papel Couchê 300g',
+      authorId: DEMO_USERS[1].id,
+      authorName: DEMO_USERS[1].name,
+      timestamp: '2026-08-26T11:30:00.000Z',
+      dataOrigin: 'demo',
+    },
+    {
       id: 'evt-demo-4',
       jobId: job2Id,
       organizationId,
@@ -229,7 +486,7 @@ export function getDemoSeedData(organizationId: string = DEFAULT_ORGANIZATION_ID
       eventType: 'STAGE_CHANGED',
       fromValue: 'stage-entry',
       toValue: 'stage-awaiting-material',
-      description: 'OP movida para Aguardando Material devido à reposição de lona 440g',
+      description: 'OP movida para Aguardando Material devido à reposição de fita dupla face',
       authorId: DEMO_USERS[2].id,
       authorName: DEMO_USERS[2].name,
       timestamp: '2026-08-26T14:00:00.000Z',
@@ -242,7 +499,7 @@ export function getDemoSeedData(organizationId: string = DEFAULT_ORGANIZATION_ID
       eventType: 'MATERIAL_GATE_CHANGED',
       fromValue: 'NOT_CHECKED',
       toValue: 'MISSING',
-      description: 'Lona 440g em falta no estoque local — solicitação de compra encaminhada',
+      description: 'Fita Dupla Face 19mm em falta no estoque — gate bloqueado',
       authorId: DEMO_USERS[2].id,
       authorName: DEMO_USERS[2].name,
       timestamp: '2026-08-26T14:05:00.000Z',
@@ -255,6 +512,10 @@ export function getDemoSeedData(organizationId: string = DEFAULT_ORGANIZATION_ID
     stages: getInitialStages(organizationId),
     orders: [order],
     jobs: [job1, job2],
+    materials,
+    requirements,
+    reservations,
+    movements,
     events,
   };
 }

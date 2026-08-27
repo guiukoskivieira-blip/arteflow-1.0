@@ -6,10 +6,13 @@ import {
   FinancialGate,
   Priority,
   ProductionEvent,
+  ProductionMaterialRequirement,
+  StockReservation,
 } from '../../types/domain';
-import { DEMO_USERS } from '../../domain/constants';
+import { DEMO_USERS, MATERIAL_UNIT_LABELS } from '../../domain/constants';
 import { OriginBadge } from '../common/OriginBadge';
 import { getJobBlockDetails, isJobOverdue, formatISODateTimeBR } from '../../domain/jobStatus';
+import { formatMilliToQuantity, parseQuantityInputToMilli } from '../../domain/quantity';
 import {
   X,
   Clock,
@@ -22,6 +25,12 @@ import {
   Box,
   DollarSign,
   Layers,
+  Package,
+  Lock,
+  Unlock,
+  CheckCircle2,
+  Plus,
+  Play,
 } from 'lucide-react';
 
 export const ProductionJobDrawer: React.FC = () => {
@@ -30,6 +39,7 @@ export const ProductionJobDrawer: React.FC = () => {
     isJobDrawerOpen,
     setIsJobDrawerOpen,
     stages,
+    materials,
     moveJobStage,
     updateArtworkGate,
     updateMaterialGate,
@@ -39,21 +49,46 @@ export const ProductionJobDrawer: React.FC = () => {
     updateJobDeadline,
     addJobNote,
     getJobEvents,
+    getJobRequirements,
+    getJobReservations,
+    addJobRequirement,
+    reserveRequirement,
+    releaseReservation,
+    consumeReservation,
   } = useArteFlow();
 
   const [events, setEvents] = useState<ProductionEvent[]>([]);
+  const [requirements, setRequirements] = useState<ProductionMaterialRequirement[]>([]);
+  const [reservations, setReservations] = useState<StockReservation[]>([]);
   const [newNote, setNewNote] = useState('');
   const [loadingEvents, setLoadingEvents] = useState(false);
 
+  // Form para adicionar requisito
+  const [isAddingReq, setIsAddingReq] = useState(false);
+  const [selectedMatId, setSelectedMatId] = useState('');
+  const [reqQtyStr, setReqQtyStr] = useState('');
+  const [materialActionError, setMaterialActionError] = useState('');
+
+  const loadData = async (jobId: string) => {
+    setLoadingEvents(true);
+    const [evts, reqs, res] = await Promise.all([
+      getJobEvents(jobId),
+      getJobRequirements(jobId),
+      getJobReservations(jobId),
+    ]);
+    setEvents(evts);
+    setRequirements(reqs);
+    setReservations(res);
+    setLoadingEvents(false);
+  };
+
   useEffect(() => {
     if (selectedJob && isJobDrawerOpen) {
-      setLoadingEvents(true);
-      getJobEvents(selectedJob.id).then((evts) => {
-        setEvents(evts);
-        setLoadingEvents(false);
-      });
+      loadData(selectedJob.id);
+      setIsAddingReq(false);
+      setMaterialActionError('');
     }
-  }, [selectedJob?.id, isJobDrawerOpen, getJobEvents]);
+  }, [selectedJob?.id, isJobDrawerOpen]);
 
   if (!isJobDrawerOpen || !selectedJob) return null;
 
@@ -110,45 +145,121 @@ export const ProductionJobDrawer: React.FC = () => {
     if (!newNote.trim()) return;
     await addJobNote(selectedJob.id, newNote.trim());
     setNewNote('');
-    const freshEvents = await getJobEvents(selectedJob.id);
-    setEvents(freshEvents);
+    await loadData(selectedJob.id);
+  };
+
+  const handleAddRequirementSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMaterialActionError('');
+
+    const targetMatId = selectedMatId || (materials.filter((m) => m.isActive)[0]?.id ?? '');
+    if (!targetMatId) {
+      setMaterialActionError('Selecione um material válido do estoque.');
+      return;
+    }
+
+    const qtyMilli = parseQuantityInputToMilli(reqQtyStr);
+    if (qtyMilli <= 0) {
+      setMaterialActionError('A quantidade necessária deve ser maior que zero.');
+      return;
+    }
+
+    try {
+      await addJobRequirement({
+        productionJobId: selectedJob.id,
+        materialId: targetMatId,
+        requiredQuantityMilli: qtyMilli,
+        dataOrigin: selectedJob.dataOrigin,
+      });
+
+      setReqQtyStr('');
+      setIsAddingReq(false);
+      await loadData(selectedJob.id);
+    } catch (err: any) {
+      setMaterialActionError(err.message || 'Erro ao adicionar requisito.');
+    }
+  };
+
+  const handleReserve = async (req: ProductionMaterialRequirement, amountMilli: number) => {
+    setMaterialActionError('');
+    try {
+      await reserveRequirement({
+        requirementId: req.id,
+        quantityMilli: amountMilli,
+      });
+      await loadData(selectedJob.id);
+    } catch (err: any) {
+      setMaterialActionError(err.message || 'Erro ao reservar material.');
+    }
+  };
+
+  const handleRelease = async (reservationId: string) => {
+    setMaterialActionError('');
+    try {
+      await releaseReservation(reservationId);
+      await loadData(selectedJob.id);
+    } catch (err: any) {
+      setMaterialActionError(err.message || 'Erro ao liberar reserva.');
+    }
+  };
+
+  const handleConsume = async (reservationId: string) => {
+    setMaterialActionError('');
+    try {
+      await consumeReservation(reservationId);
+      await loadData(selectedJob.id);
+    } catch (err: any) {
+      setMaterialActionError(err.message || 'Erro ao consumir reserva de material.');
+    }
   };
 
   const deadlineInputVal = selectedJob.deadlineISO
     ? selectedJob.deadlineISO.substring(0, 10)
     : '';
 
+  const activeMaterials = materials.filter((m) => m.isActive);
+
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="job-drawer-title"
+      data-testid="job-drawer"
+      className="fixed inset-0 z-50 overflow-hidden flex justify-end"
+    >
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
         onClick={() => setIsJobDrawerOpen(false)}
       />
 
-      {/* Drawer Panel */}
-      <div className="relative w-full max-w-2xl bg-white shadow-2xl flex flex-col h-full z-10 overflow-hidden">
+      {/* Slide-over Card */}
+      <div className="relative w-full max-w-2xl bg-white shadow-2xl border-l border-slate-200 flex flex-col h-full z-10">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 flex-shrink-0">
+        <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/90 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center text-white shadow-sm">
+              <FileText className="w-5 h-5" />
+            </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-slate-900 font-mono">
+                <span className="font-mono text-sm font-black text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded">
                   {selectedJob.jobCode}
-                </h3>
-                <span className="text-xs text-slate-500 font-mono bg-white px-2 py-0.5 rounded border border-slate-200">
-                  {selectedJob.orderNumber}
+                </span>
+                <span className="text-xs text-slate-400 font-mono">
+                  Ref. Pedido: {selectedJob.orderNumber}
                 </span>
                 <OriginBadge type="data" value={selectedJob.dataOrigin} />
               </div>
-              <p className="text-xs text-slate-500 mt-0.5 font-medium">
-                Ordem de Produção independente gerada do Pedido
-              </p>
+              <h3 id="job-drawer-title" className="text-base font-bold text-slate-900 leading-tight mt-0.5">
+                {selectedJob.productName}
+              </h3>
             </div>
           </div>
 
           <button
             onClick={() => setIsJobDrawerOpen(false)}
+            aria-label="Fechar gaveta da OP"
             className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
@@ -254,23 +365,23 @@ export const ProductionJobDrawer: React.FC = () => {
                   className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
                 >
                   <option value="RELEASED">Liberado</option>
-                  <option value="DEPOSIT_PENDING">Sinal pendente</option>
-                  <option value="PAYMENT_PENDING">Pagamento pendente</option>
-                  <option value="BLOCKED">Bloqueado (Bloqueia)</option>
+                  <option value="DEPOSIT_PENDING">Sinal pendente (Bloqueia)</option>
+                  <option value="PAYMENT_PENDING">Pgto pendente (Bloqueia)</option>
+                  <option value="BLOCKED">Bloqueado</option>
                 </select>
               </div>
             </div>
 
             {/* Priority, Assignee & Deadline */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-200">
               <div>
                 <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                  Prioridade
+                  Prioridade:
                 </label>
                 <select
                   value={selectedJob.priority}
                   onChange={handlePriorityChange}
-                  className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none"
                 >
                   <option value="LOW">Baixa</option>
                   <option value="MEDIUM">Média</option>
@@ -281,12 +392,12 @@ export const ProductionJobDrawer: React.FC = () => {
 
               <div>
                 <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                  Responsável
+                  Responsável:
                 </label>
                 <select
                   value={selectedJob.assignee?.id || 'UNASSIGNED'}
                   onChange={handleAssigneeChange}
-                  className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none"
                 >
                   <option value="UNASSIGNED">Não atribuído</option>
                   {DEMO_USERS.map((u) => (
@@ -299,54 +410,265 @@ export const ProductionJobDrawer: React.FC = () => {
 
               <div>
                 <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                  Prazo de Entrega
+                  Prazo de Entrega:
                 </label>
                 <input
                   type="date"
                   value={deadlineInputVal}
                   onChange={handleDeadlineChange}
-                  className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  className="w-full text-xs px-2.5 py-1 bg-white border border-slate-300 rounded-lg focus:outline-none"
                 />
               </div>
             </div>
           </div>
 
-          {/* Product & Technical Snapshot */}
+          {/* SECTION: PLANO DE MATERIAIS & RESERVAS (FASE 2A) */}
+          <div className="border border-slate-200 rounded-xl p-4 space-y-4 bg-white shadow-2xs">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Package className="w-4 h-4 text-teal-600" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                  Plano de Materiais & Reservas ({requirements.length})
+                </h4>
+              </div>
+
+              {!isAddingReq && (
+                <button
+                  onClick={() => setIsAddingReq(true)}
+                  className="px-2.5 py-1 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg flex items-center gap-1 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Vincular Material</span>
+                </button>
+              )}
+            </div>
+
+            {materialActionError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs font-semibold flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                <span>{materialActionError}</span>
+              </div>
+            )}
+
+            {/* Form de Vincular Material */}
+            {isAddingReq && (
+              <form
+                onSubmit={handleAddRequirementSubmit}
+                className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800">
+                    Vincular Requisito de Estoque à OP
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingReq(false)}
+                    className="text-xs text-slate-400 hover:text-slate-600"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Material Disponível no Estoque *
+                    </label>
+                    <select
+                      value={selectedMatId || (activeMaterials[0]?.id ?? '')}
+                      onChange={(e) => setSelectedMatId(e.target.value)}
+                      className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none font-semibold text-slate-800"
+                    >
+                      {activeMaterials.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          [{m.sku}] {m.name} ({MATERIAL_UNIT_LABELS[m.unit].abbr})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Quantidade Necessária *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: 50"
+                      value={reqQtyStr}
+                      onChange={(e) => setReqQtyStr(e.target.value)}
+                      className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingReq(false)}
+                    className="px-3 py-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg"
+                  >
+                    Fechar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-3 py-1 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-2xs"
+                  >
+                    Salvar Requisito
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Requirements List */}
+            {requirements.length === 0 ? (
+              <p className="text-xs text-slate-400 py-3 text-center border border-dashed border-slate-200 rounded-lg">
+                Nenhum plano de materiais cadastrado para esta OP (Gate = Não Verificado).
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {requirements.map((req) => {
+                  const reqRes = reservations.filter((r) => r.requirementId === req.id);
+                  const activeRes = reqRes.filter((r) => r.status === 'ACTIVE');
+                  const consumedRes = reqRes.filter((r) => r.status === 'CONSUMED');
+
+                  const activeReservedMilli = activeRes.reduce((sum, r) => sum + r.reservedQuantityMilli, 0);
+                  const consumedMilli = consumedRes.reduce((sum, r) => sum + r.reservedQuantityMilli, 0);
+                  const totalCoveredMilli = activeReservedMilli + consumedMilli;
+                  const uncoveredMilli = Math.max(0, req.requiredQuantityMilli - totalCoveredMilli);
+
+                  const isFullyCovered = totalCoveredMilli >= req.requiredQuantityMilli;
+                  const unitAbbr = MATERIAL_UNIT_LABELS[req.materialSnapshot.unit].abbr;
+
+                  return (
+                    <div
+                      key={req.id}
+                      className="p-3.5 bg-slate-50/70 border border-slate-200 rounded-xl space-y-2.5 text-xs"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-[10px] font-bold px-1 bg-slate-200 text-slate-700 rounded">
+                              {req.materialSnapshot.sku}
+                            </span>
+                            <span className="font-bold text-slate-900">{req.materialSnapshot.name}</span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">
+                            Necessário:{' '}
+                            <strong className="text-slate-800">
+                              {formatMilliToQuantity(req.requiredQuantityMilli)} {unitAbbr}
+                            </strong>
+                          </div>
+                        </div>
+
+                        <div>
+                          {isFullyCovered ? (
+                            <span className="px-2 py-0.5 bg-teal-50 text-teal-700 border border-teal-200 rounded text-[10px] font-bold flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              100% Coberto
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded text-[10px] font-bold">
+                              Faltam {formatMilliToQuantity(uncoveredMilli)} {unitAbbr}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Status breakdown & action bar */}
+                      <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-200/80">
+                        <div className="text-[11px] text-slate-600 flex items-center gap-3">
+                          <span>
+                            Reservado:{' '}
+                            <strong className="text-teal-700">
+                              {formatMilliToQuantity(activeReservedMilli)} {unitAbbr}
+                            </strong>
+                          </span>
+                          {consumedMilli > 0 && (
+                            <span>
+                              Consumido:{' '}
+                              <strong className="text-blue-700">
+                                {formatMilliToQuantity(consumedMilli)} {unitAbbr}
+                              </strong>
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          {uncoveredMilli > 0 && (
+                            <button
+                              onClick={() => handleReserve(req, uncoveredMilli)}
+                              className="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded font-semibold text-[11px] flex items-center gap-1 shadow-2xs transition-colors"
+                            >
+                              <Lock className="w-3 h-3" />
+                              <span>Reservar ({formatMilliToQuantity(uncoveredMilli)})</span>
+                            </button>
+                          )}
+
+                          {activeRes.map((res) => (
+                            <div key={res.id} className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleConsume(res.id)}
+                                className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold text-[11px] flex items-center gap-1 shadow-2xs transition-colors"
+                                title="Baixar saldo físico do estoque"
+                              >
+                                <Play className="w-3 h-3" />
+                                <span>Consumir</span>
+                              </button>
+                              <button
+                                onClick={() => handleRelease(res.id)}
+                                className="px-2 py-1 bg-white hover:bg-red-50 text-slate-600 hover:text-red-700 border border-slate-300 rounded font-semibold text-[11px] flex items-center gap-1 transition-colors"
+                                title="Liberar reserva de estoque"
+                              >
+                                <Unlock className="w-3 h-3" />
+                                <span>Liberar</span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Technical Specs */}
           <div className="border border-slate-200 rounded-xl p-4 space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
               <FileText className="w-4 h-4 text-teal-600" />
-              <span>Especificações do Trabalho</span>
+              <span>Especificações do Produto</span>
             </h4>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
               <div>
-                <span className="text-slate-400 font-medium">Produto:</span>
-                <p className="font-bold text-slate-900">{selectedJob.productName}</p>
-              </div>
-              <div>
-                <span className="text-slate-400 font-medium">Setor de Produção:</span>
-                <p className="font-semibold text-slate-800">{selectedJob.sector}</p>
-              </div>
-              <div>
-                <span className="text-slate-400 font-medium">Quantidade:</span>
-                <p className="font-bold text-slate-900">
+                <span className="text-slate-400 block">Quantidade:</span>
+                <span className="font-bold text-slate-900">
                   {selectedJob.quantity} {selectedJob.unit}
-                </p>
+                </span>
               </div>
+
               <div>
-                <span className="text-slate-400 font-medium">Dimensões:</span>
-                <p className="font-semibold text-slate-800">
-                  {selectedJob.dimensions
-                    ? `${selectedJob.dimensions.width} x ${selectedJob.dimensions.height} ${selectedJob.dimensions.unit}`
-                    : 'Não especificadas'}
-                </p>
+                <span className="text-slate-400 block">Setor Produtivo:</span>
+                <span className="font-semibold text-slate-800">{selectedJob.sector}</span>
               </div>
+
+              {selectedJob.dimensions && (
+                <div>
+                  <span className="text-slate-400 block">Dimensões:</span>
+                  <span className="font-semibold text-slate-800 font-mono">
+                    {selectedJob.dimensions.width} x {selectedJob.dimensions.height}{' '}
+                    {selectedJob.dimensions.unit}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Finishings */}
             {selectedJob.finishings && selectedJob.finishings.length > 0 && (
               <div className="pt-2 border-t border-slate-100">
-                <span className="text-xs text-slate-400 font-medium block mb-1.5">
+                <span className="text-xs text-slate-400 font-medium block mb-1">
                   Acabamentos Obrigatórios:
                 </span>
                 <div className="flex flex-wrap gap-1.5">

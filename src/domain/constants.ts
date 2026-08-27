@@ -1,4 +1,5 @@
 import { WorkflowStage, ArtworkGate, MaterialGate, FinancialGate, Priority } from '../types/domain';
+import { MaterialUnit } from '../types/inventory';
 
 export const DEFAULT_ORGANIZATION_ID = 'org-demo-grafica';
 
@@ -101,28 +102,28 @@ export const ARTWORK_GATE_CONFIG: Record<
   { label: string; bgClass: string; textClass: string; borderClass: string; isBlocking: boolean }
 > = {
   NOT_RECEIVED: {
-    label: 'Não recebida',
+    label: 'Não Recebido',
+    bgClass: 'bg-slate-100',
+    textClass: 'text-slate-700',
+    borderClass: 'border-slate-300',
+    isBlocking: true,
+  },
+  PENDING_REVIEW: {
+    label: 'Em Análise',
     bgClass: 'bg-amber-50',
     textClass: 'text-amber-700',
     borderClass: 'border-amber-200',
-    isBlocking: false,
-  },
-  PENDING_REVIEW: {
-    label: 'Em análise',
-    bgClass: 'bg-blue-50',
-    textClass: 'text-blue-700',
-    borderClass: 'border-blue-200',
-    isBlocking: false,
+    isBlocking: true,
   },
   APPROVED: {
-    label: 'Aprovada',
-    bgClass: 'bg-emerald-50',
-    textClass: 'text-emerald-700',
-    borderClass: 'border-emerald-200',
+    label: 'Aprovado',
+    bgClass: 'bg-teal-50',
+    textClass: 'text-teal-700',
+    borderClass: 'border-teal-200',
     isBlocking: false,
   },
   REJECTED: {
-    label: 'Reprovada',
+    label: 'Reprovado',
     bgClass: 'bg-red-50',
     textClass: 'text-red-700',
     borderClass: 'border-red-200',
@@ -135,17 +136,17 @@ export const MATERIAL_GATE_CONFIG: Record<
   { label: string; bgClass: string; textClass: string; borderClass: string; isBlocking: boolean }
 > = {
   NOT_CHECKED: {
-    label: 'Não verificado',
-    bgClass: 'bg-slate-50',
-    textClass: 'text-slate-600',
-    borderClass: 'border-slate-200',
+    label: 'Não Verificado',
+    bgClass: 'bg-slate-100',
+    textClass: 'text-slate-700',
+    borderClass: 'border-slate-300',
     isBlocking: false,
   },
   AVAILABLE: {
     label: 'Disponível',
-    bgClass: 'bg-emerald-50',
-    textClass: 'text-emerald-700',
-    borderClass: 'border-emerald-200',
+    bgClass: 'bg-blue-50',
+    textClass: 'text-blue-700',
+    borderClass: 'border-blue-200',
     isBlocking: false,
   },
   RESERVED: {
@@ -156,7 +157,7 @@ export const MATERIAL_GATE_CONFIG: Record<
     isBlocking: false,
   },
   MISSING: {
-    label: 'Em falta',
+    label: 'Em Falta',
     bgClass: 'bg-red-50',
     textClass: 'text-red-700',
     borderClass: 'border-red-200',
@@ -170,24 +171,24 @@ export const FINANCIAL_GATE_CONFIG: Record<
 > = {
   RELEASED: {
     label: 'Liberado',
-    bgClass: 'bg-emerald-50',
-    textClass: 'text-emerald-700',
-    borderClass: 'border-emerald-200',
+    bgClass: 'bg-teal-50',
+    textClass: 'text-teal-700',
+    borderClass: 'border-teal-200',
     isBlocking: false,
   },
   DEPOSIT_PENDING: {
-    label: 'Sinal pendente',
+    label: 'Sinal Pendente',
     bgClass: 'bg-amber-50',
     textClass: 'text-amber-700',
     borderClass: 'border-amber-200',
-    isBlocking: false,
+    isBlocking: true,
   },
   PAYMENT_PENDING: {
-    label: 'Pagamento pendente',
+    label: 'Pgto Pendente',
     bgClass: 'bg-amber-50',
     textClass: 'text-amber-700',
     borderClass: 'border-amber-200',
-    isBlocking: false,
+    isBlocking: true,
   },
   BLOCKED: {
     label: 'Bloqueado',
@@ -264,4 +265,41 @@ export const DEMO_USERS = [
     role: 'PRODUCAO' as const,
     organizationId: DEFAULT_ORGANIZATION_ID,
   },
+];
+
+// Unidades Canônicas Estáveis do Módulo de Estoque (Fase 2A)
+export const MATERIAL_UNITS: MaterialUnit[] = [
+  'UNIT',
+  'SHEET',
+  'METER',
+  'SQUARE_METER',
+  'LITER',
+  'KILOGRAM',
+  'ROLL',
+  'PACKAGE',
+];
+
+export const MATERIAL_UNIT_LABELS: Record<
+  MaterialUnit,
+  { label: string; abbr: string; description: string }
+> = {
+  UNIT: { label: 'Unidade', abbr: 'un', description: 'Peças, ilhoses, suportes' },
+  SHEET: { label: 'Folha', abbr: 'fl', description: 'Papéis planos, chapas cortadas' },
+  METER: { label: 'Metro Linear', abbr: 'm', description: 'Perfis, fitas, canaletas' },
+  SQUARE_METER: { label: 'Metro Quadrado', abbr: 'm²', description: 'Lonas, adesivos, chapas em m²' },
+  LITER: { label: 'Litro', abbr: 'L', description: 'Tintas, vernizes, solventes' },
+  KILOGRAM: { label: 'Quilograma', abbr: 'kg', description: 'Resinas, pigmentos, ferragens' },
+  ROLL: { label: 'Bobina / Rolo', abbr: 'bob', description: 'Rolos fechados de substrato' },
+  PACKAGE: { label: 'Pacote / Caixa', abbr: 'pct', description: 'Embalagens fechadas de insumos' },
+};
+
+export const MATERIAL_CATEGORIES = [
+  'Papéis & Cartões',
+  'Lonas & Banners',
+  'Adesivos & Vinis',
+  'Tintas & Solventes',
+  'Chapas Rígidas (ACM/PS/Acrílico)',
+  'Acabamentos & Acessórios',
+  'Embalagens',
+  'Outros Insumos',
 ];

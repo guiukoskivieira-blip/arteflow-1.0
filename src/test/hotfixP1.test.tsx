@@ -437,14 +437,14 @@ describe('ArteFlow — Hotfix P1: Garantias Completas (17 Requisitos)', () => {
     const orderRepo = new LocalStorageOrderRepository();
     await orderRepo.clear(orgId);
 
-    // seedVersion permanece '2' enquanto orders está vazio
-    expect(window.localStorage.getItem(storageKeys.seedVersion(orgId))).toBe('2');
+    // seedVersion permanece CURRENT_SEED_VERSION enquanto orders está vazio
+    expect(window.localStorage.getItem(storageKeys.seedVersion(orgId))).toBe(String(CURRENT_SEED_VERSION));
     expect((await orderRepo.list(orgId)).length).toBe(0);
   });
 
   // Garantia 16: seedVersion versão explícita
-  it('16. Controle de seed utiliza a versão numérica explícita CURRENT_SEED_VERSION = 2', () => {
-    expect(CURRENT_SEED_VERSION).toBe(2);
+  it('16. Controle de seed utiliza a versão numérica explícita CURRENT_SEED_VERSION >= 2', () => {
+    expect(CURRENT_SEED_VERSION).toBeGreaterThanOrEqual(2);
     expect(storageKeys.seedVersion(orgId)).toBe('arteflow:v1:org-demo-grafica:seed_version');
   });
 

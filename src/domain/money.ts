@@ -4,7 +4,7 @@
  */
 
 export function formatCentsToBRL(cents: number): string {
-  if (!Number.isFinite(cents)) {
+  if (!Number.isFinite(cents) || !Number.isSafeInteger(cents)) {
     return 'R$ 0,00';
   }
 
@@ -21,7 +21,9 @@ export function formatCentsToBRL(cents: number): string {
 
 export function parseBRLInputToCents(input: string | number): number {
   if (typeof input === 'number') {
-    return Math.round(input * 100);
+    if (!Number.isFinite(input) || input < 0 || input > Number.MAX_SAFE_INTEGER / 100) return 0;
+    const rounded = Math.round(input * 100);
+    return Number.isSafeInteger(rounded) ? rounded : 0;
   }
 
   if (!input || typeof input !== 'string') {
@@ -41,11 +43,26 @@ export function parseBRLInputToCents(input: string | number): number {
   }
 
   const floatValue = parseFloat(normalized);
-  if (isNaN(floatValue)) return 0;
+  if (isNaN(floatValue) || !isFinite(floatValue) || floatValue < 0 || floatValue > Number.MAX_SAFE_INTEGER / 100) {
+    return 0;
+  }
 
-  return Math.round(floatValue * 100);
+  const result = Math.round(floatValue * 100);
+  return Number.isSafeInteger(result) ? result : 0;
 }
 
 export function calculateOrderTotalCents(items: { totalPriceCents: number }[]): number {
-  return items.reduce((acc, item) => acc + Math.round(item.totalPriceCents || 0), 0);
+  return items.reduce((acc, item) => {
+    const price = Math.round(item.totalPriceCents || 0);
+    const next = acc + price;
+    return Number.isSafeInteger(next) ? next : acc;
+  }, 0);
+}
+
+export function isValidCents(cents: number): boolean {
+  return Number.isSafeInteger(cents) && cents > 0 && cents <= Number.MAX_SAFE_INTEGER;
+}
+
+export function isValidNonNegativeCents(cents: number): boolean {
+  return Number.isSafeInteger(cents) && cents >= 0 && cents <= Number.MAX_SAFE_INTEGER;
 }

@@ -1,0 +1,99 @@
+import React from 'react';
+import { useArteFlow } from '../../context/ArteFlowContext';
+import { DEMO_USERS } from '../../domain/constants';
+import { Menu, Plus, Building2, UserCircle2 } from 'lucide-react';
+
+export const Header: React.FC = () => {
+  const {
+    organization,
+    currentUser,
+    setCurrentUser,
+    setIsMobileDrawerOpen,
+    setIsNewOrderModalOpen,
+    activePage,
+  } = useArteFlow();
+
+  const getPageTitle = () => {
+    switch (activePage) {
+      case 'overview':
+        return 'Visão Geral Operacional';
+      case 'orders':
+        return 'Gestão de Pedidos';
+      case 'production':
+        return 'Quadro de Produção';
+      case 'inventory':
+        return 'Estoque de Materiais & Insumos';
+      case 'purchasing':
+        return 'Ordens de Compra';
+      case 'financial':
+        return 'Financeiro Operacional';
+      case 'dispatch':
+        return 'Expedição & Logística';
+      case 'team':
+        return 'Equipe & Permissões';
+      case 'settings':
+        return 'Configurações do Sistema';
+      default:
+        return 'ArteFlow';
+    }
+  };
+
+  return (
+    <header className="h-16 bg-white border-b border-slate-200/80 px-4 md:px-6 flex items-center justify-between flex-shrink-0 z-10">
+      {/* Left: Mobile Toggle & Page Title */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => setIsMobileDrawerOpen(true)}
+          className="lg:hidden p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100"
+          aria-label="Abrir menu de navegação"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        <div>
+          <h1 className="text-base md:text-lg font-bold text-slate-900 leading-tight">
+            {getPageTitle()}
+          </h1>
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <span className="inline-flex items-center gap-1">
+              <Building2 className="w-3 h-3 text-slate-400" />
+              {organization.name}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Right: Actions, Operator Selector, New Order Button */}
+      <div className="flex items-center gap-2 md:gap-3">
+        {/* User Switcher (Demo Context) */}
+        <div className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200/80">
+          <UserCircle2 className="w-4 h-4 text-teal-600" />
+          <span className="text-xs text-slate-500 font-medium">Operador:</span>
+          <select
+            value={currentUser.id}
+            onChange={(e) => {
+              const selected = DEMO_USERS.find((u) => u.id === e.target.value);
+              if (selected) setCurrentUser(selected);
+            }}
+            className="text-xs font-semibold text-slate-800 bg-transparent border-none focus:ring-0 focus:outline-none cursor-pointer"
+          >
+            {DEMO_USERS.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.name} ({user.role})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Quick New Order Button */}
+        <button
+          onClick={() => setIsNewOrderModalOpen(true)}
+          className="inline-flex items-center gap-2 px-3 md:px-4 py-2 text-xs md:text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 rounded-lg shadow-sm transition-all flex-shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Novo Pedido</span>
+        </button>
+      </div>
+    </header>
+  );
+};

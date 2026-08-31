@@ -83,6 +83,9 @@ import {
   RecordGoodsReceiptInput,
 } from '../services/procurementService';
 import { computeProcurementSuggestions } from '../services/procurementSuggestionService';
+import { FinancialIndicators, PaymentMethod, ReceivableAccount, ReceivablePayment } from '../types/financial';
+import { LocalStorageReceivablePaymentRepository, LocalStorageReceivableRepository } from '../repositories/localStorageFinancialRepositories';
+import { FinancialService } from '../services/financialService';
 
 export type AppPage =
   | 'overview'
@@ -129,6 +132,9 @@ interface ArteFlowContextType {
   goodsReceiptItems: GoodsReceiptItem[];
   procurementEvents: ProcurementEvent[];
   procurementSuggestions: ProcurementSuggestion[];
+  receivables: ReceivableAccount[];
+  receivablePayments: ReceivablePayment[];
+  financialIndicators: FinancialIndicators;
 
   filter: ProductionJobFilter;
   setFilter: (updater: Partial<ProductionJobFilter> | ((prev: ProductionJobFilter) => ProductionJobFilter)) => void;
@@ -240,6 +246,7 @@ interface ArteFlowContextType {
   getPurchaseOrderReceipts: (orderId: string) => Promise<GoodsReceipt[]>;
   getPurchaseRequestItems: (requestId: string) => Promise<PurchaseRequestItem[]>;
   getProcurementEvents: (entityType: string, entityId: string) => Promise<ProcurementEvent[]>;
+  registerReceivablePayment: (input: { receivableId: string; amountCents: number; paidAt: string; method: PaymentMethod; notes?: string; idempotencyKey: string }) => Promise<void>;
 
   // Ações de Ambiente
   resetDemoEnvironment: () => Promise<void>;
@@ -292,6 +299,8 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [goodsReceipts, setGoodsReceipts] = useState<GoodsReceipt[]>([]);
   const [goodsReceiptItems, setGoodsReceiptItems] = useState<GoodsReceiptItem[]>([]);
   const [procurementEvents, setProcurementEvents] = useState<ProcurementEvent[]>([]);
+  const [receivables, setReceivables] = useState<ReceivableAccount[]>([]);
+  const [receivablePayments, setReceivablePayments] = useState<ReceivablePayment[]>([]);
 
   const [filter, setFilterState] = useState<ProductionJobFilter>(defaultFilter);
   const [materialFilter, setMaterialFilterState] = useState<MaterialFilter>(defaultMaterialFilter);
@@ -348,6 +357,8 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const goodsReceiptItemRepo = useMemo(() => new LocalStorageGoodsReceiptItemRepository(), []);
   const procurementEventRepo = useMemo(() => new LocalStorageProcurementEventRepository(), []);
   const procurementSequenceRepo = useMemo(() => new LocalStorageProcurementSequenceRepository(), []);
+  const receivableRepo = useMemo(() => new LocalStorageReceivableRepository(), []);
+  const receivablePaymentRepo = useMemo(() => new LocalStorageReceivablePaymentRepository(), []);
 
   const orderService = useMemo(
     () => new OrderService(orderRepo, jobRepo, eventRepo),
@@ -356,6 +367,10 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const jobService = useMemo(
     () => new JobService(jobRepo, eventRepo, requirementRepo),
     [jobRepo, eventRepo, requirementRepo]
+  );
+  const financialService = useMemo(
+    () => new FinancialService(receivableRepo, receivablePaymentRepo, jobRepo, jobService),
+    [receivableRepo, receivablePaymentRepo, jobRepo, jobService]
   );
   const inventoryService = useMemo(
     () =>
@@ -432,6 +447,8 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     let loadedReceipts = await goodsReceiptRepo.listAll(orgId);
     let loadedReceiptItems = await goodsReceiptItemRepo.listAll(orgId);
     let loadedProcEvents = await procurementEventRepo.listAll(orgId);
+    let loadedReceivables = await receivableRepo.list(orgId);
+    let loadedReceivablePayments = await receivablePaymentRepo.list(orgId);
 
     const hasUserOrdersOrJobs =
       loadedOrders.some((o) => o.dataOrigin === 'user') ||
@@ -557,6 +574,10 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setGoodsReceipts(loadedReceipts);
     setGoodsReceiptItems(loadedReceiptItems);
     setProcurementEvents(loadedProcEvents);
+    loadedReceivables = await financialService.ensureAccountsForOrders(orgId, loadedOrders);
+    loadedReceivablePayments = await receivablePaymentRepo.list(orgId);
+    setReceivables(loadedReceivables);
+    setReceivablePayments(loadedReceivablePayments);
   }, [
     organization.id,
     stageRepo,
@@ -575,6 +596,9 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     goodsReceiptRepo,
     goodsReceiptItemRepo,
     procurementEventRepo,
+    receivableRepo,
+    receivablePaymentRepo,
+    financialService,
   ]);
 
   useEffect(() => {
@@ -1324,6 +1348,24 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     [procurementEventRepo, organization.id]
   );
 
+  const registerReceivablePayment = useCallback(
+    async (input: { receivableId: string; amountCents: number; paidAt: string; method: PaymentMethod; notes?: string; idempotencyKey: string }) => {
+      await financialService.registerPayment(organization.id, {
+        ...input,
+        userId: currentUser.id,
+        userName: currentUser.name,
+      });
+      await reloadAll();
+      setFeedbackNotification({ type: 'success', title: 'Pagamento registrado', message: 'Conta e gate financeiro atualizados com sucesso.' });
+    },
+    [financialService, organization.id, currentUser, reloadAll]
+  );
+
+  const financialIndicators = useMemo(
+    () => financialService.calculateIndicators(receivables),
+    [financialService, receivables]
+  );
+
   // ==========================================
   // AMBIENTE & SEED
   // ==========================================
@@ -1347,6 +1389,8 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       window.localStorage.removeItem(storageKeys.goodsReceipts(orgId));
       window.localStorage.removeItem(storageKeys.goodsReceiptItems(orgId));
       window.localStorage.removeItem(storageKeys.procurementEvents(orgId));
+      window.localStorage.removeItem(storageKeys.receivables(orgId));
+      window.localStorage.removeItem(storageKeys.receivablePayments(orgId));
       window.localStorage.removeItem(storageKeys.procurementSequences(orgId));
       window.localStorage.removeItem(storageKeys.seedState(orgId));
       window.localStorage.removeItem(storageKeys.inventorySeedState(orgId));
@@ -1378,6 +1422,8 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       window.localStorage.removeItem(storageKeys.goodsReceipts(orgId));
       window.localStorage.removeItem(storageKeys.goodsReceiptItems(orgId));
       window.localStorage.removeItem(storageKeys.procurementEvents(orgId));
+      window.localStorage.removeItem(storageKeys.receivables(orgId));
+      window.localStorage.removeItem(storageKeys.receivablePayments(orgId));
       window.localStorage.setItem(storageKeys.seedVersion(orgId), String(CURRENT_SEED_VERSION));
       window.localStorage.setItem(storageKeys.seedState(orgId), 'INTENTIONALLY_CLEARED');
       window.localStorage.setItem(storageKeys.inventorySeedState(orgId), 'INTENTIONALLY_CLEARED');
@@ -1412,6 +1458,9 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         goodsReceiptItems,
         procurementEvents,
         procurementSuggestions,
+        receivables,
+        receivablePayments,
+        financialIndicators,
 
         filter,
         setFilter,
@@ -1519,6 +1568,7 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         getPurchaseOrderReceipts,
         getPurchaseRequestItems,
         getProcurementEvents,
+        registerReceivablePayment,
 
         resetDemoEnvironment,
         resetToDemoSeed,

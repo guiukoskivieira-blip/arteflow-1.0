@@ -66,7 +66,7 @@ export const Header: React.FC = () => {
         {/* Honest Local Demo Operator Selector */}
         <div
           className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200/80"
-          title="Seletor de operador local demonstrativo para assinatura de eventos de auditoria (sem login/backend real nesta fase)"
+          title="Seletor de operador local para assinatura de eventos de auditoria"
         >
           <UserCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0" />
           <div className="flex flex-col">

@@ -168,6 +168,12 @@ export const PurchaseOrderDetailDrawer: React.FC = () => {
                 Previsão de Entrega: {new Date(po.expectedAt).toLocaleDateString('pt-BR')}
               </div>
             )}
+            {po.issuedAt && (
+              <div className="text-emerald-700 font-semibold flex items-center sm:justify-end gap-1 mt-1">
+                <Calendar className="w-3.5 h-3.5" />
+                Emitido em: {new Date(po.issuedAt).toLocaleDateString('pt-BR')}
+              </div>
+            )}
           </div>
         </div>
 

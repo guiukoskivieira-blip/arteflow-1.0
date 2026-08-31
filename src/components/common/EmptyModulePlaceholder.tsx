@@ -4,7 +4,7 @@ import { LucideIcon, ArrowRight, ShieldCheck, Layers } from 'lucide-react';
 interface EmptyModulePlaceholderProps {
   title: string;
   description: string;
-  phase: string;
+  phase?: string;
   icon: LucideIcon;
   plannedFeatures: string[];
   onNavigateToProduction?: () => void;
@@ -26,9 +26,7 @@ export const EmptyModulePlaceholder: React.FC<EmptyModulePlaceholderProps> = ({
           <Icon className="w-8 h-8" />
         </div>
         <div className="flex-1">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 mb-2">
-            <span>{phase}</span>
-          </div>
+          {phase && <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 mb-2"><span>{phase}</span></div>}
           <h2 className="text-xl md:text-2xl font-bold text-slate-900">{title}</h2>
           <p className="text-sm text-slate-600 mt-1 max-w-2xl">{description}</p>
         </div>
@@ -53,9 +51,7 @@ export const EmptyModulePlaceholder: React.FC<EmptyModulePlaceholderProps> = ({
         </div>
 
         <div className="mt-6 pt-5 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-slate-500 text-center sm:text-left">
-            Nesta Fase 1, o foco operacional é a gestão estrita de Pedidos e Ordens de Produção no Quadro Kanban.
-          </p>
+          <p className="text-xs text-slate-500 text-center sm:text-left">Acompanhe pedidos e ordens de produção no Quadro Kanban.</p>
           {onNavigateToProduction && (
             <button
               onClick={onNavigateToProduction}

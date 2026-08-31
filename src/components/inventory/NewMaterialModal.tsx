@@ -281,7 +281,7 @@ export const NewMaterialModal: React.FC = () => {
               className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
             />
             <p className="text-[11px] text-slate-400 mt-1">
-              * O módulo completo de Compras & Fornecedores será conectado na Fase 2B.
+              * Cadastros de fornecedores e solicitações estão disponíveis no módulo de Compras.
             </p>
           </div>
         </form>

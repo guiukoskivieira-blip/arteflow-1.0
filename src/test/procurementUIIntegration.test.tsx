@@ -352,6 +352,7 @@ describe('Procurement UI & Service Integration (Fase 2B.3A)', () => {
     await waitFor(() => {
       const receiveButtons = screen.getAllByTitle(/registrar recebimento de materiais/i);
       expect(receiveButtons.length).toBeGreaterThan(0);
+      expect(appCtx.purchaseOrders.some((order: any) => Boolean(order.issuedAt))).toBe(true);
     });
 
     // 2. Abre modal de recebimento
@@ -362,12 +363,22 @@ describe('Procurement UI & Service Integration (Fase 2B.3A)', () => {
       expect(screen.getByText('Registrar Recebimento Físico')).toBeInTheDocument();
     });
 
-    // 3. Submete o recebimento
+    // 3. Submete um recebimento parcial e fecha o modal
+    const quantityInput = screen.getByRole('spinbutton');
+    fireEvent.change(quantityInput, { target: { value: '0.5' } });
     const confirmReceiptBtn = screen.getByRole('button', { name: /confirmar recebimento/i });
     fireEvent.click(confirmReceiptBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(/concluído/i)).toBeInTheDocument();
+      expect(screen.queryByText('Registrar Recebimento Físico')).not.toBeInTheDocument();
     });
+
+    // 4. Reabre, recebe o saldo total e fecha novamente
+    const remainingReceiveBtn = screen.getAllByTitle(/registrar recebimento de materiais/i)[0];
+    fireEvent.click(remainingReceiveBtn);
+    await screen.findByText('Registrar Recebimento Físico');
+    fireEvent.click(screen.getByRole('button', { name: /confirmar recebimento/i }));
+    await waitFor(() => expect(screen.queryByText('Registrar Recebimento Físico')).not.toBeInTheDocument());
+    expect(appCtx.purchaseOrders.some((order: any) => order.status === 'RECEIVED')).toBe(true);
   });
 });

@@ -25,10 +25,10 @@ const navItems: NavItem[] = [
   { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
   { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
   { id: 'production', label: 'Produção', icon: Kanban, isCentral: true },
-  { id: 'inventory', label: 'Estoque', icon: Package, badge: 'Fase 2' },
-  { id: 'purchasing', label: 'Compras', icon: ShoppingBag, badge: 'Fase 2' },
-  { id: 'financial', label: 'Financeiro', icon: DollarSign, badge: 'Fase 2' },
-  { id: 'dispatch', label: 'Expedição', icon: Truck, badge: 'Fase 2' },
+  { id: 'inventory', label: 'Estoque', icon: Package },
+  { id: 'purchasing', label: 'Compras', icon: ShoppingBag },
+  { id: 'financial', label: 'Financeiro', icon: DollarSign },
+  { id: 'dispatch', label: 'Expedição', icon: Truck },
   { id: 'settings', label: 'Configurações', icon: Settings },
 ];
 

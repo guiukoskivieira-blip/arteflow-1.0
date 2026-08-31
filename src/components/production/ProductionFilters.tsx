@@ -36,7 +36,7 @@ export const ProductionFilters: React.FC = () => {
             placeholder="Pesquisar por cliente, pedido, OP, produto ou setor..."
             value={filter.searchQuery || ''}
             onChange={(e) => setFilter({ searchQuery: e.target.value })}
-            className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all placeholder:text-slate-400"
+            className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all placeholder:text-slate-400"
           />
           {filter.searchQuery && (
             <button
@@ -99,7 +99,7 @@ export const ProductionFilters: React.FC = () => {
         <select
           value={filter.priority || 'ALL'}
           onChange={(e) => setFilter({ priority: e.target.value as Priority | 'ALL' })}
-          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none flex-shrink-0 cursor-pointer"
+          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none flex-shrink-0 cursor-pointer"
         >
           <option value="ALL">Todas Prioridades</option>
           <option value="LOW">Baixa</option>
@@ -112,7 +112,7 @@ export const ProductionFilters: React.FC = () => {
         <select
           value={filter.sector || 'ALL'}
           onChange={(e) => setFilter({ sector: e.target.value })}
-          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none flex-shrink-0 cursor-pointer"
+          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none flex-shrink-0 cursor-pointer"
         >
           <option value="ALL">Todos os Setores</option>
           {SECTORS.map((s) => (
@@ -126,7 +126,7 @@ export const ProductionFilters: React.FC = () => {
         <select
           value={filter.assigneeId || 'ALL'}
           onChange={(e) => setFilter({ assigneeId: e.target.value })}
-          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none flex-shrink-0 cursor-pointer"
+          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none flex-shrink-0 cursor-pointer"
         >
           <option value="ALL">Todos Responsáveis</option>
           <option value="UNASSIGNED">Não atribuído</option>
@@ -141,7 +141,7 @@ export const ProductionFilters: React.FC = () => {
         <select
           value={filter.deadlineRange || 'ALL'}
           onChange={(e) => setFilter({ deadlineRange: e.target.value as any })}
-          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none flex-shrink-0 cursor-pointer"
+          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none flex-shrink-0 cursor-pointer"
         >
           <option value="ALL">Todos os Prazos</option>
           <option value="OVERDUE">Atrasadas</option>
@@ -154,7 +154,7 @@ export const ProductionFilters: React.FC = () => {
         <select
           value={filter.gateStatus || 'ALL'}
           onChange={(e) => setFilter({ gateStatus: e.target.value as any })}
-          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none flex-shrink-0 cursor-pointer"
+          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none flex-shrink-0 cursor-pointer"
         >
           <option value="ALL">Todos Status de Gates</option>
           <option value="BLOCKED">Apenas Bloqueadas (Qualquer Gate)</option>
@@ -168,7 +168,7 @@ export const ProductionFilters: React.FC = () => {
         <select
           value={filter.dataOrigin || 'ALL'}
           onChange={(e) => setFilter({ dataOrigin: e.target.value as any })}
-          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none flex-shrink-0 cursor-pointer"
+          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none flex-shrink-0 cursor-pointer"
         >
           <option value="ALL">Todas Origens</option>
           <option value="user">Criados pelo Usuário</option>

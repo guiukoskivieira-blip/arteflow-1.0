@@ -13,7 +13,7 @@ export default defineConfig({
   reporter: [['list']],
   outputDir: 'test-results',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://127.0.0.1:5173',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'off',
@@ -25,7 +25,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm.cmd run dev -- --port 5173',
+    command: process.platform === 'win32'
+      ? 'npm.cmd run dev -- --host 127.0.0.1 --port 5173'
+      : 'npm run dev -- --host 127.0.0.1 --port 5173',
     port: 5173,
     reuseExistingServer: true,
     timeout: 30000,

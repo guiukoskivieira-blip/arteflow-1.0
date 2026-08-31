@@ -161,7 +161,7 @@ export const ProductionListView: React.FC = () => {
                             setSelectedJob(job);
                             setIsJobDrawerOpen(true);
                           }}
-                          className="p-1 rounded text-slate-500 hover:text-teal-600 hover:bg-teal-50"
+                          className="p-1 rounded text-slate-500 hover:text-sky-600 hover:bg-sky-50"
                           title="Ver detalhes"
                         >
                           <Eye className="w-4 h-4" />
@@ -169,7 +169,7 @@ export const ProductionListView: React.FC = () => {
                         <button
                           onClick={() => moveJobNext(job.id)}
                           disabled={isLastStage}
-                          className="p-1 rounded text-teal-700 bg-teal-50 hover:bg-teal-100 disabled:text-slate-300 disabled:bg-transparent"
+                          className="p-1 rounded text-sky-700 bg-sky-50 hover:bg-sky-100 disabled:text-slate-300 disabled:bg-transparent"
                           title="Avançar etapa"
                         >
                           <ChevronRight className="w-4 h-4" />

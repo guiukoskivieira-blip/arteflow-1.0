@@ -42,31 +42,33 @@ export const OverviewPage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto max-w-7xl mx-auto w-full">
+    <div className="flex-1 p-4 md:p-7 space-y-5 overflow-y-auto max-w-[1480px] mx-auto w-full">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="relative overflow-hidden rounded-[22px] border border-sky-100 bg-white p-6 md:p-7 shadow-[0_16px_45px_rgba(15,74,122,0.08)] flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+        <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-sky-100/70 blur-3xl" />
+        <div className="pointer-events-none absolute right-28 top-8 h-24 w-24 rounded-full bg-cyan-100/60 blur-2xl" />
         <div>
-          <span className="text-xs uppercase tracking-wider text-teal-400 font-bold">
+          <span className="text-[11px] uppercase tracking-[0.18em] text-sky-600 font-extrabold">
             ArteFlow Operacional
           </span>
-          <h2 className="text-xl md:text-2xl font-black tracking-tight mt-0.5">
+          <h2 className="text-2xl md:text-[28px] text-slate-950 font-black tracking-tight mt-1">
             Painel Geral de Produção
           </h2>
-          <p className="text-xs md:text-sm text-slate-300 mt-1 max-w-xl">
+          <p className="text-xs md:text-sm text-slate-500 mt-1.5 max-w-xl leading-relaxed">
             Acompanhamento em tempo real de pedidos, OPs ativas, gargalos de produção e situação dos gates.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="relative flex items-center gap-3">
           <button
             onClick={() => setIsNewOrderModalOpen(true)}
-            className="px-4 py-2 bg-teal-500 hover:bg-teal-400 active:bg-teal-600 text-slate-950 font-bold rounded-lg text-xs transition-colors shadow-sm"
+            className="af-primary-button text-xs"
           >
             + Novo Pedido
           </button>
           <button
             onClick={() => setActivePage('production')}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg text-xs border border-slate-700 transition-colors flex items-center gap-1.5"
+            className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs border border-slate-200 transition-colors flex items-center gap-1.5 shadow-sm"
           >
             <span>Ver Quadro</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -77,10 +79,10 @@ export const OverviewPage: React.FC = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total OPs */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
+        <div className="af-surface p-5 transition hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(15,23,42,0.07)]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500">Em Produção Ativa</span>
-            <div className="p-2 rounded-lg bg-teal-50 text-teal-600">
+            <div className="p-2.5 rounded-xl bg-sky-50 text-sky-600">
               <Kanban className="w-4 h-4" />
             </div>
           </div>
@@ -91,7 +93,7 @@ export const OverviewPage: React.FC = () => {
         </div>
 
         {/* Bloqueadas */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
+        <div className="af-surface p-5 transition hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(15,23,42,0.07)]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500">OPs Bloqueadas</span>
             <div className="p-2 rounded-lg bg-red-50 text-red-600">
@@ -105,7 +107,7 @@ export const OverviewPage: React.FC = () => {
         </div>
 
         {/* Atrasadas */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
+        <div className="af-surface p-5 transition hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(15,23,42,0.07)]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500">OPs Atrasadas</span>
             <div className="p-2 rounded-lg bg-amber-50 text-amber-600">
@@ -119,7 +121,7 @@ export const OverviewPage: React.FC = () => {
         </div>
 
         {/* Total Pedidos / Faturamento */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
+        <div className="af-surface p-5 transition hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(15,23,42,0.07)]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500">Pedidos Registrados</span>
             <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
@@ -136,9 +138,9 @@ export const OverviewPage: React.FC = () => {
       </div>
 
       {/* Stage Breakdown Grid */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-2xs p-5 space-y-4">
+      <div className="af-surface p-5 md:p-6 space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-          <Layers className="w-4 h-4 text-teal-600" />
+          <Layers className="w-4 h-4 text-sky-600" />
           <span>Distribuição de Ordens de Produção por Etapa</span>
         </h3>
 
@@ -149,7 +151,7 @@ export const OverviewPage: React.FC = () => {
               <div
                 key={stage.id}
                 onClick={() => setActivePage('production')}
-                className="p-3 rounded-lg border border-slate-100 bg-slate-50/70 hover:bg-teal-50/50 hover:border-teal-200 transition-all cursor-pointer"
+                className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-sky-50/70 hover:border-sky-200 hover:-translate-y-0.5 transition-all cursor-pointer"
               >
                 <div className="flex items-center gap-1.5 mb-1">
                   <span
@@ -174,7 +176,7 @@ export const OverviewPage: React.FC = () => {
 
       {/* Attention section: Blocked & Urgent jobs */}
       {blockedJobs.length > 0 && (
-        <div className="bg-white rounded-xl border border-red-200 shadow-2xs p-5 space-y-3">
+        <div className="af-surface border-red-200 p-5 space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-wider text-red-700 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-red-600" />

@@ -229,7 +229,7 @@ export const RequestsTab: React.FC = () => {
                           )}
 
                           {req.status === 'CONVERTED' && (
-                            <span className="text-xs text-teal-700 font-medium flex items-center gap-1">
+                            <span className="text-xs text-sky-700 font-medium flex items-center gap-1">
                               <CheckCircle2 className="w-3.5 h-3.5" /> Atendida
                             </span>
                           )}

@@ -100,7 +100,7 @@ export const ReversionReasonModal: React.FC<ReversionReasonModalProps> = ({
               }}
               rows={3}
               placeholder="Ex: Cliente solicitou reajuste na arte ou acabamento adicional antes da retirada final..."
-              className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-800 resize-none"
+              className="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-800 resize-none"
             />
             {error && <p className="text-[11px] font-medium text-red-600">{error}</p>}
           </div>

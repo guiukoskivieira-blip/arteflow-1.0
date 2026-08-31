@@ -30,7 +30,7 @@ export const InventoryFilters: React.FC = () => {
             placeholder="Pesquisar por nome do material ou SKU..."
             value={materialFilter.searchQuery}
             onChange={(e) => setMaterialFilter({ searchQuery: e.target.value })}
-            className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all placeholder:text-slate-400"
+            className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all placeholder:text-slate-400"
           />
           {materialFilter.searchQuery && (
             <button
@@ -94,7 +94,7 @@ export const InventoryFilters: React.FC = () => {
         <select
           value={materialFilter.category}
           onChange={(e) => setMaterialFilter({ category: e.target.value })}
-          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none flex-shrink-0 cursor-pointer"
+          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none flex-shrink-0 cursor-pointer"
         >
           <option value="ALL">Todas as Categorias</option>
           {MATERIAL_CATEGORIES.map((cat) => (
@@ -108,7 +108,7 @@ export const InventoryFilters: React.FC = () => {
         <select
           value={materialFilter.unit}
           onChange={(e) => setMaterialFilter({ unit: e.target.value })}
-          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none flex-shrink-0 cursor-pointer"
+          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none flex-shrink-0 cursor-pointer"
         >
           <option value="ALL">Todas as Unidades</option>
           {MATERIAL_UNITS.map((u) => (
@@ -122,7 +122,7 @@ export const InventoryFilters: React.FC = () => {
         <select
           value={materialFilter.status}
           onChange={(e) => setMaterialFilter({ status: e.target.value as any })}
-          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none flex-shrink-0 cursor-pointer"
+          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none flex-shrink-0 cursor-pointer"
         >
           <option value="ALL">Todos os Status</option>
           <option value="ACTIVE">Apenas Ativos</option>
@@ -133,7 +133,7 @@ export const InventoryFilters: React.FC = () => {
         <select
           value={materialFilter.dataOrigin}
           onChange={(e) => setMaterialFilter({ dataOrigin: e.target.value as any })}
-          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none flex-shrink-0 cursor-pointer"
+          className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:ring-1 focus:ring-sky-500 focus:outline-none flex-shrink-0 cursor-pointer"
         >
           <option value="ALL">Todas as Origens</option>
           <option value="user">Criados pelo Usuário</option>

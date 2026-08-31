@@ -47,13 +47,13 @@ export const OrderList: React.FC = () => {
             placeholder="Pesquisar pedidos por número, cliente ou item..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+            className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
           />
         </div>
 
         <button
           onClick={() => setIsNewOrderModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-sm transition-all flex-shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg shadow-sm transition-all flex-shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Criar Pedido Manual</span>
@@ -131,7 +131,7 @@ export const OrderList: React.FC = () => {
                             {linkedJobs.map((j) => (
                               <span
                                 key={j.id}
-                                className="px-1.5 py-0.2 bg-teal-50 text-teal-800 border border-teal-200 rounded font-mono text-[10px]"
+                                className="px-1.5 py-0.2 bg-sky-50 text-sky-800 border border-sky-200 rounded font-mono text-[10px]"
                               >
                                 {j.jobCode}
                               </span>
@@ -158,7 +158,7 @@ export const OrderList: React.FC = () => {
                       <td className="px-4 py-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => handleOpenDetails(order)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 rounded-lg transition-colors"
                         >
                           <Eye className="w-3.5 h-3.5" />
                           <span>Detalhes</span>

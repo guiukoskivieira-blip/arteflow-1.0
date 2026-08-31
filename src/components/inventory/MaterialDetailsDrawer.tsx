@@ -121,12 +121,12 @@ export const MaterialDetailsDrawer: React.FC = () => {
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/90 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center text-white shadow-sm">
+            <div className="w-9 h-9 rounded-xl bg-sky-600 flex items-center justify-center text-white shadow-sm">
               <Package className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-xs font-bold text-teal-800 bg-teal-50 border border-teal-200 px-1.5 py-0.2 rounded">
+                <span className="font-mono text-xs font-bold text-sky-800 bg-sky-50 border border-sky-200 px-1.5 py-0.2 rounded">
                   {selectedMaterial.sku}
                 </span>
                 {!selectedMaterial.isActive && (
@@ -181,7 +181,7 @@ export const MaterialDetailsDrawer: React.FC = () => {
             className={`px-3 py-1.5 text-xs font-medium rounded-lg flex items-center gap-1.5 border transition-colors ${
               selectedMaterial.isActive
                 ? 'text-slate-600 hover:text-red-700 border-slate-200 hover:bg-red-50'
-                : 'text-teal-700 hover:text-teal-900 border-teal-200 bg-teal-50'
+                : 'text-sky-700 hover:text-sky-900 border-sky-200 bg-sky-50'
             }`}
           >
             <Power className="w-3.5 h-3.5" />
@@ -203,12 +203,12 @@ export const MaterialDetailsDrawer: React.FC = () => {
             </div>
 
             {/* Reservado */}
-            <div className="p-3.5 rounded-xl bg-teal-50/70 border border-teal-200 text-center">
-              <span className="text-[10px] uppercase font-bold text-teal-700 block">Reservado</span>
-              <span className="text-lg font-black text-teal-900 font-mono block mt-1">
+            <div className="p-3.5 rounded-xl bg-sky-50/70 border border-sky-200 text-center">
+              <span className="text-[10px] uppercase font-bold text-sky-700 block">Reservado</span>
+              <span className="text-lg font-black text-sky-900 font-mono block mt-1">
                 {formatMilliToQuantity(availability.reservedMilli)}
               </span>
-              <span className="text-[10px] text-teal-700">{activeReservations.length} reservas OPs</span>
+              <span className="text-[10px] text-sky-700">{activeReservations.length} reservas OPs</span>
             </div>
 
             {/* Disponível */}
@@ -240,7 +240,7 @@ export const MaterialDetailsDrawer: React.FC = () => {
           {/* Details Specification */}
           <div className="bg-slate-50/70 rounded-xl border border-slate-200 p-4 space-y-3">
             <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-teal-600" />
+              <Layers className="w-3.5 h-3.5 text-sky-600" />
               <span>Especificações & Custos</span>
             </h4>
 
@@ -269,7 +269,7 @@ export const MaterialDetailsDrawer: React.FC = () => {
               </div>
               <div>
                 <span className="text-slate-400 block text-[11px]">Valor Total Estimado:</span>
-                <span className="font-mono font-bold text-teal-800">
+                <span className="font-mono font-bold text-sky-800">
                   {formatCentsToBRL(totalValueCents)}
                 </span>
               </div>
@@ -292,7 +292,7 @@ export const MaterialDetailsDrawer: React.FC = () => {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-teal-600" />
+                <Lock className="w-3.5 h-3.5 text-sky-600" />
                 <span>Reservas Ativas Vinculadas ({activeReservations.length})</span>
               </h4>
             </div>
@@ -310,7 +310,7 @@ export const MaterialDetailsDrawer: React.FC = () => {
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-teal-800">
+                        <span className="font-mono font-bold text-sky-800">
                           {formatMilliToQuantity(res.reservedQuantityMilli)} {unitLabel.abbr}
                         </span>
                         <span className="text-slate-400">•</span>
@@ -320,7 +320,7 @@ export const MaterialDetailsDrawer: React.FC = () => {
                         Por {res.userName} em {formatISODateTimeBR(res.createdAt)}
                       </span>
                     </div>
-                    <span className="px-2 py-0.5 bg-teal-50 text-teal-700 border border-teal-200 rounded text-[10px] font-bold">
+                    <span className="px-2 py-0.5 bg-sky-50 text-sky-700 border border-sky-200 rounded text-[10px] font-bold">
                       RESERVADO
                     </span>
                   </div>
@@ -333,7 +333,7 @@ export const MaterialDetailsDrawer: React.FC = () => {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                <History className="w-3.5 h-3.5 text-teal-600" />
+                <History className="w-3.5 h-3.5 text-sky-600" />
                 <span>Histórico Imutável de Movimentações ({movements.length})</span>
               </h4>
             </div>
@@ -349,7 +349,7 @@ export const MaterialDetailsDrawer: React.FC = () => {
                   if (mov.type === 'CONSUMPTION') {
                     badge = { text: 'CONSUMO', bg: 'bg-blue-50 text-blue-800 border-blue-200' };
                   } else if (mov.type === 'POSITIVE_ADJUSTMENT') {
-                    badge = { text: 'AJUSTE (+)', bg: 'bg-teal-50 text-teal-800 border-teal-200' };
+                    badge = { text: 'AJUSTE (+)', bg: 'bg-sky-50 text-sky-800 border-sky-200' };
                   } else if (mov.type === 'NEGATIVE_ADJUSTMENT') {
                     badge = { text: 'AJUSTE (-)', bg: 'bg-red-50 text-red-800 border-red-200' };
                   } else if (mov.type === 'RETURN') {

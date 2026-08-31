@@ -124,7 +124,7 @@ export const NewMaterialModal: React.FC = () => {
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 flex-shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white">
+            <div className="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center text-white">
               <PackagePlus className="w-4 h-4" />
             </div>
             <div>
@@ -166,7 +166,7 @@ export const NewMaterialModal: React.FC = () => {
                 placeholder="Ex: MAT-PAP-300"
                 value={sku}
                 onChange={(e) => setSku(e.target.value.toUpperCase())}
-                className="w-full text-xs font-mono font-bold px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none uppercase"
+                className="w-full text-xs font-mono font-bold px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none uppercase"
               />
             </div>
 
@@ -180,7 +180,7 @@ export const NewMaterialModal: React.FC = () => {
                 placeholder="Ex: Papel Couchê 300g Brilho 66x96cm"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
               />
             </div>
           </div>
@@ -193,7 +193,7 @@ export const NewMaterialModal: React.FC = () => {
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
               >
                 {MATERIAL_CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
@@ -210,7 +210,7 @@ export const NewMaterialModal: React.FC = () => {
               <select
                 value={unit}
                 onChange={(e) => setUnit(e.target.value as MaterialUnit)}
-                className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none font-semibold text-teal-800"
+                className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none font-semibold text-sky-800"
               >
                 {MATERIAL_UNITS.map((u) => (
                   <option key={u} value={u}>
@@ -236,7 +236,7 @@ export const NewMaterialModal: React.FC = () => {
                   placeholder="0"
                   value={initialStockStr}
                   onChange={(e) => setInitialStockStr(e.target.value)}
-                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
 
@@ -249,7 +249,7 @@ export const NewMaterialModal: React.FC = () => {
                   placeholder="0"
                   value={minStockStr}
                   onChange={(e) => setMinStockStr(e.target.value)}
-                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
 
@@ -262,7 +262,7 @@ export const NewMaterialModal: React.FC = () => {
                   placeholder="0,00"
                   value={unitCostStr}
                   onChange={(e) => setUnitCostStr(e.target.value)}
-                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -278,7 +278,7 @@ export const NewMaterialModal: React.FC = () => {
               placeholder="Ex: Distribuidora Papéis Brasil Ltda"
               value={supplierName}
               onChange={(e) => setSupplierName(e.target.value)}
-              className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+              className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
             />
             <p className="text-[11px] text-slate-400 mt-1">
               * Cadastros de fornecedores e solicitações estão disponíveis no módulo de Compras.
@@ -300,7 +300,7 @@ export const NewMaterialModal: React.FC = () => {
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="px-5 py-2 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 disabled:opacity-50 rounded-lg shadow-sm transition-all flex items-center gap-2"
+            className="px-5 py-2 text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 active:bg-sky-800 disabled:opacity-50 rounded-lg shadow-sm transition-all flex items-center gap-2"
           >
             <Sparkles className="w-4 h-4" />
             <span>{isSubmitting ? 'Cadastrando...' : 'Cadastrar Material'}</span>

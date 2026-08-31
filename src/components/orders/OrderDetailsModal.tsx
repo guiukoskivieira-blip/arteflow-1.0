@@ -77,7 +77,7 @@ export const OrderDetailsModal: React.FC = () => {
           {/* Customer Snapshot */}
           <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-              <Building2 className="w-4 h-4 text-teal-600" />
+              <Building2 className="w-4 h-4 text-sky-600" />
               <span>Cliente (Snapshot do Pedido)</span>
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
@@ -115,7 +115,7 @@ export const OrderDetailsModal: React.FC = () => {
           {/* Items & Generated OPs */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-              <Package className="w-4 h-4 text-teal-600" />
+              <Package className="w-4 h-4 text-sky-600" />
               <span>Itens & Ordens de Produção ({selectedOrder.items.length})</span>
             </h4>
 
@@ -187,7 +187,7 @@ export const OrderDetailsModal: React.FC = () => {
 
                         <button
                           onClick={() => handleOpenJob(linkedJob.id)}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:text-teal-900 hover:underline"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-sky-700 hover:text-sky-900 hover:underline"
                         >
                           <span>Ver OP no Fluxo</span>
                           <ArrowRight className="w-3.5 h-3.5" />
@@ -209,9 +209,9 @@ export const OrderDetailsModal: React.FC = () => {
           )}
 
           {/* Total */}
-          <div className="p-4 bg-teal-50/50 rounded-xl border border-teal-100 flex items-center justify-between">
-            <span className="text-xs font-semibold text-teal-900">Total do Pedido:</span>
-            <span className="text-lg font-bold text-teal-900 font-mono">
+          <div className="p-4 bg-sky-50/50 rounded-xl border border-sky-100 flex items-center justify-between">
+            <span className="text-xs font-semibold text-sky-900">Total do Pedido:</span>
+            <span className="text-lg font-bold text-sky-900 font-mono">
               {formatCentsToBRL(selectedOrder.totalAmountCents)}
             </span>
           </div>

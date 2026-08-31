@@ -222,7 +222,7 @@ export const NewOrderModal: React.FC = () => {
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 flex-shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white">
+            <div className="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center text-white">
               <ShoppingCart className="w-4 h-4" />
             </div>
             <div>
@@ -257,7 +257,7 @@ export const NewOrderModal: React.FC = () => {
           <div className="bg-slate-50/70 rounded-xl border border-slate-200 p-4 space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                <Building2 className="w-4 h-4 text-teal-600" />
+                <Building2 className="w-4 h-4 text-sky-600" />
                 <span>1. Dados do Cliente (Snapshot)</span>
               </h4>
 
@@ -285,7 +285,7 @@ export const NewOrderModal: React.FC = () => {
                   placeholder="Ex: Alfa Comunicação & Eventos"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
 
@@ -298,7 +298,7 @@ export const NewOrderModal: React.FC = () => {
                   placeholder="00.000.000/0000-00"
                   value={customerDoc}
                   onChange={(e) => setCustomerDoc(e.target.value)}
-                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
 
@@ -311,7 +311,7 @@ export const NewOrderModal: React.FC = () => {
                   placeholder="contato@cliente.com"
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
-                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
 
@@ -324,7 +324,7 @@ export const NewOrderModal: React.FC = () => {
                   placeholder="(11) 90000-0000"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
 
@@ -337,7 +337,7 @@ export const NewOrderModal: React.FC = () => {
                   placeholder="Nome do contato"
                   value={contactPerson}
                   onChange={(e) => setContactPerson(e.target.value)}
-                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
 
@@ -350,7 +350,7 @@ export const NewOrderModal: React.FC = () => {
                   required
                   value={deliveryDate}
                   onChange={(e) => setDeliveryDate(e.target.value)}
-                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -360,14 +360,14 @@ export const NewOrderModal: React.FC = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                <Package className="w-4 h-4 text-teal-600" />
+                <Package className="w-4 h-4 text-sky-600" />
                 <span>2. Itens do Pedido ({items.length} {items.length === 1 ? 'item' : 'itens'})</span>
               </h4>
 
               <button
                 type="button"
                 onClick={handleAddItem}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg border border-teal-200 transition-colors"
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 rounded-lg border border-sky-200 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Adicionar Item</span>
@@ -410,7 +410,7 @@ export const NewOrderModal: React.FC = () => {
                         placeholder="Ex: Cartão de Visita 4x4 Couché 300g"
                         value={item.productName}
                         onChange={(e) => handleItemChange(index, 'productName', e.target.value)}
-                        className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                        className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
                       />
                     </div>
 
@@ -600,7 +600,7 @@ export const NewOrderModal: React.FC = () => {
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="px-5 py-2 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 disabled:opacity-50 rounded-lg shadow-sm transition-all flex items-center gap-2"
+            className="px-5 py-2 text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 active:bg-sky-800 disabled:opacity-50 rounded-lg shadow-sm transition-all flex items-center gap-2"
           >
             <Sparkles className="w-4 h-4" />
             <span>{isSubmitting ? 'Gerando OPs...' : 'Salvar Pedido & Gerar OPs'}</span>

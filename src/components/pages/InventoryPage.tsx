@@ -146,7 +146,7 @@ export const InventoryPage: React.FC = () => {
 
           <button
             onClick={() => setIsNewMaterialModalOpen(true)}
-            className="px-3.5 py-2 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 rounded-lg shadow-sm transition-all flex items-center gap-1.5"
+            className="px-3.5 py-2 text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 active:bg-sky-800 rounded-lg shadow-sm transition-all flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" />
             <span>Novo Material</span>
@@ -160,7 +160,7 @@ export const InventoryPage: React.FC = () => {
         <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 text-xs">
             <span className="font-semibold">Materiais Ativos</span>
-            <Boxes className="w-4 h-4 text-teal-600" />
+            <Boxes className="w-4 h-4 text-sky-600" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-xl font-black text-slate-900 font-mono">{activeMaterialsCount}</span>
@@ -203,7 +203,7 @@ export const InventoryPage: React.FC = () => {
         <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 text-xs">
             <span className="font-semibold">Reservas Ativas</span>
-            <Lock className="w-4 h-4 text-teal-600" />
+            <Lock className="w-4 h-4 text-sky-600" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-xl font-black text-slate-900 font-mono">{totalReservationsCount}</span>
@@ -263,7 +263,7 @@ export const InventoryPage: React.FC = () => {
                         {/* SKU */}
                         <td className="px-4 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
                           <div className="flex items-center gap-1.5">
-                            <span className="bg-slate-100 group-hover:bg-teal-50 group-hover:text-teal-900 border border-slate-200 px-1.5 py-0.5 rounded text-[11px] transition-colors">
+                            <span className="bg-slate-100 group-hover:bg-sky-50 group-hover:text-sky-900 border border-slate-200 px-1.5 py-0.5 rounded text-[11px] transition-colors">
                               {mat.sku}
                             </span>
                             <OriginBadge type="data" value={mat.dataOrigin} />
@@ -287,7 +287,7 @@ export const InventoryPage: React.FC = () => {
                         </td>
 
                         {/* Reservado */}
-                        <td className="px-4 py-3 text-right font-mono font-semibold text-teal-700 whitespace-nowrap">
+                        <td className="px-4 py-3 text-right font-mono font-semibold text-sky-700 whitespace-nowrap">
                           {reservedMilli > 0 ? formatMilliToQuantity(reservedMilli) : '—'}
                         </td>
 
@@ -355,7 +355,7 @@ export const InventoryPage: React.FC = () => {
                             </button>
                             <button
                               onClick={() => handleOpenDetails(mat)}
-                              className="p-1 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded transition-colors"
+                              className="p-1 text-slate-500 hover:text-sky-700 hover:bg-sky-50 rounded transition-colors"
                               title="Ver Detalhes e Histórico"
                             >
                               <Eye className="w-3.5 h-3.5" />

@@ -9,7 +9,6 @@ import {
   DollarSign,
   Truck,
   Settings,
-  Layers,
   X,
 } from 'lucide-react';
 
@@ -51,21 +50,13 @@ export const MobileDrawer: React.FC = () => {
       />
 
       {/* Drawer Panel */}
-      <div className="relative flex-1 flex flex-col max-w-xs w-full bg-slate-900 text-slate-300 shadow-xl">
+      <div className="relative flex-1 flex flex-col max-w-xs w-full bg-gradient-to-b from-[#075aa9] via-[#087bc2] to-[#08a8ca] text-blue-50 shadow-2xl">
         {/* Header */}
-        <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800 bg-slate-950/50">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white">
-              <Layers className="w-4 h-4" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-white text-sm">ArteFlow</span>
-              <span className="text-[10px] text-slate-400">Prexyon</span>
-            </div>
-          </div>
+        <div className="h-[78px] flex items-center justify-between px-5 border-b border-white/15 bg-white/[0.04]">
+          <img src="/brand/arteflow-white.png" alt="ArteFlow — Gestão da Produção" className="h-[52px] w-[174px] object-contain object-left" />
           <button
             onClick={() => setIsMobileDrawerOpen(false)}
-            className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+            className="p-2 text-blue-100 hover:text-white rounded-lg hover:bg-white/10"
           >
             <X className="w-5 h-5" />
           </button>
@@ -81,19 +72,19 @@ export const MobileDrawer: React.FC = () => {
               <button
                 key={item.id}
                 onClick={() => handleSelect(item.id)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
                   isActive
-                    ? 'bg-teal-600 text-white font-semibold shadow-sm'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-white text-[#086aaa] font-bold shadow-lg shadow-sky-950/10'
+                    : 'text-blue-50/90 hover:bg-white/10 hover:text-white'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#079ac7]' : 'text-blue-100/75'}`} />
                   <span>{item.label}</span>
                 </div>
 
                 {item.isCentral && jobs.length > 0 && (
-                  <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-teal-500/20 text-teal-300">
+                  <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${isActive ? 'bg-sky-50 text-sky-700' : 'bg-white/15 text-white'}`}>
                     {jobs.length}
                   </span>
                 )}

@@ -159,7 +159,7 @@ export const StockAdjustmentModal: React.FC = () => {
             <select
               value={selectedMatId}
               onChange={(e) => setSelectedMatId(e.target.value)}
-              className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none font-semibold text-slate-800"
+              className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none font-semibold text-slate-800"
             >
               {materials.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -176,7 +176,7 @@ export const StockAdjustmentModal: React.FC = () => {
             <select
               value={adjustType}
               onChange={(e) => setAdjustType(e.target.value as any)}
-              className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none font-semibold text-slate-800"
+              className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none font-semibold text-slate-800"
             >
               <option value="POSITIVE_ADJUSTMENT">Ajuste Positivo (+) — Contagem / Inventário</option>
               <option value="NEGATIVE_ADJUSTMENT">Ajuste Negativo (-) — Perda / Avaria / Quebra</option>
@@ -194,7 +194,7 @@ export const StockAdjustmentModal: React.FC = () => {
               placeholder="Ex: 10"
               value={quantityStr}
               onChange={(e) => setQuantityStr(e.target.value)}
-              className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+              className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
             />
           </div>
 
@@ -208,7 +208,7 @@ export const StockAdjustmentModal: React.FC = () => {
               placeholder="Ex: Ajuste decorrente da contagem física mensal do inventário..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+              className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
             />
           </div>
 

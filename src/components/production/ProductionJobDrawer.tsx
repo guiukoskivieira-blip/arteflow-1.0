@@ -238,12 +238,12 @@ export const ProductionJobDrawer: React.FC = () => {
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/90 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center text-white shadow-sm">
+            <div className="w-9 h-9 rounded-xl bg-sky-600 flex items-center justify-center text-white shadow-sm">
               <FileText className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-sm font-black text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded">
+                <span className="font-mono text-sm font-black text-sky-800 bg-sky-50 border border-sky-200 px-2 py-0.5 rounded">
                   {selectedJob.jobCode}
                 </span>
                 <span className="text-xs text-slate-400 font-mono">
@@ -293,7 +293,7 @@ export const ProductionJobDrawer: React.FC = () => {
           {/* Core Controls: Stage, Gates & Priority */}
           <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-4">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-teal-600" />
+              <Layers className="w-4 h-4 text-sky-600" />
               <span>Controles Operacionais da OP</span>
             </h4>
 
@@ -305,7 +305,7 @@ export const ProductionJobDrawer: React.FC = () => {
               <select
                 value={selectedJob.stageId}
                 onChange={handleStageChange}
-                className="w-full text-xs font-medium px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:outline-none"
+                className="w-full text-xs font-medium px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 focus:outline-none"
               >
                 {sortedStages.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -326,7 +326,7 @@ export const ProductionJobDrawer: React.FC = () => {
                 <select
                   value={selectedJob.artworkGate}
                   onChange={handleArtworkChange}
-                  className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500"
                 >
                   <option value="NOT_RECEIVED">Não recebida</option>
                   <option value="PENDING_REVIEW">Em análise</option>
@@ -344,7 +344,7 @@ export const ProductionJobDrawer: React.FC = () => {
                 <select
                   value={selectedJob.materialGate}
                   onChange={handleMaterialChange}
-                  className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500"
                 >
                   <option value="NOT_CHECKED">Não verificado</option>
                   <option value="AVAILABLE">Disponível</option>
@@ -362,7 +362,7 @@ export const ProductionJobDrawer: React.FC = () => {
                 <select
                   value={selectedJob.financialGate}
                   onChange={handleFinancialChange}
-                  className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  className="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500"
                 >
                   <option value="RELEASED">Liberado</option>
                   <option value="DEPOSIT_PENDING">Sinal pendente (Bloqueia)</option>
@@ -426,7 +426,7 @@ export const ProductionJobDrawer: React.FC = () => {
           <div className="border border-slate-200 rounded-xl p-4 space-y-4 bg-white shadow-2xs">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <Package className="w-4 h-4 text-teal-600" />
+                <Package className="w-4 h-4 text-sky-600" />
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
                   Plano de Materiais & Reservas ({requirements.length})
                 </h4>
@@ -435,7 +435,7 @@ export const ProductionJobDrawer: React.FC = () => {
               {!isAddingReq && (
                 <button
                   onClick={() => setIsAddingReq(true)}
-                  className="px-2.5 py-1 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg flex items-center gap-1 transition-colors"
+                  className="px-2.5 py-1 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg flex items-center gap-1 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Vincular Material</span>
@@ -512,7 +512,7 @@ export const ProductionJobDrawer: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-3 py-1 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-2xs"
+                    className="px-3 py-1 text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 rounded-lg shadow-2xs"
                   >
                     Salvar Requisito
                   </button>
@@ -563,7 +563,7 @@ export const ProductionJobDrawer: React.FC = () => {
 
                         <div>
                           {isFullyCovered ? (
-                            <span className="px-2 py-0.5 bg-teal-50 text-teal-700 border border-teal-200 rounded text-[10px] font-bold flex items-center gap-1">
+                            <span className="px-2 py-0.5 bg-sky-50 text-sky-700 border border-sky-200 rounded text-[10px] font-bold flex items-center gap-1">
                               <CheckCircle2 className="w-3 h-3" />
                               100% Coberto
                             </span>
@@ -580,7 +580,7 @@ export const ProductionJobDrawer: React.FC = () => {
                         <div className="text-[11px] text-slate-600 flex items-center gap-3">
                           <span>
                             Reservado:{' '}
-                            <strong className="text-teal-700">
+                            <strong className="text-sky-700">
                               {formatMilliToQuantity(activeReservedMilli)} {unitAbbr}
                             </strong>
                           </span>
@@ -598,7 +598,7 @@ export const ProductionJobDrawer: React.FC = () => {
                           {uncoveredMilli > 0 && (
                             <button
                               onClick={() => handleReserve(req, uncoveredMilli)}
-                              className="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded font-semibold text-[11px] flex items-center gap-1 shadow-2xs transition-colors"
+                              className="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded font-semibold text-[11px] flex items-center gap-1 shadow-2xs transition-colors"
                             >
                               <Lock className="w-3 h-3" />
                               <span>Reservar ({formatMilliToQuantity(uncoveredMilli)})</span>
@@ -637,7 +637,7 @@ export const ProductionJobDrawer: React.FC = () => {
           {/* Technical Specs */}
           <div className="border border-slate-200 rounded-xl p-4 space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-              <FileText className="w-4 h-4 text-teal-600" />
+              <FileText className="w-4 h-4 text-sky-600" />
               <span>Especificações do Produto</span>
             </h4>
 
@@ -700,7 +700,7 @@ export const ProductionJobDrawer: React.FC = () => {
           {/* Customer Snapshot */}
           <div className="border border-slate-200 rounded-xl p-4 space-y-2">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-              <Building2 className="w-4 h-4 text-teal-600" />
+              <Building2 className="w-4 h-4 text-sky-600" />
               <span>Cliente (Snapshot Comercial)</span>
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
@@ -733,7 +733,7 @@ export const ProductionJobDrawer: React.FC = () => {
           <div className="border border-slate-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-                <History className="w-4 h-4 text-teal-600" />
+                <History className="w-4 h-4 text-sky-600" />
                 <span>Histórico Auditável (Append-Only)</span>
               </h4>
               <span className="text-[10px] text-slate-400 font-mono">
@@ -748,12 +748,12 @@ export const ProductionJobDrawer: React.FC = () => {
                 placeholder="Registrar anotação operacional no histórico..."
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
-                className="flex-1 text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                className="flex-1 text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:ring-1 focus:ring-sky-500 focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={!newNote.trim()}
-                className="px-3 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                className="px-3 py-2 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>Salvar</span>

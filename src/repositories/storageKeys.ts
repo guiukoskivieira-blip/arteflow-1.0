@@ -32,5 +32,7 @@ export const storageKeys = {
   goodsReceiptItems: (orgId: string) => `${PREFIX}:${orgId}:goods_receipt_items`,
   procurementEvents: (orgId: string) => `${PREFIX}:${orgId}:procurement_events`,
   procurementSequences: (orgId: string) => `${PREFIX}:${orgId}:procurement_sequences`,
+  receivables: (orgId: string) => `${PREFIX}:${orgId}:receivables`,
+  receivablePayments: (orgId: string) => `${PREFIX}:${orgId}:receivable_payments`,
   organization: (orgId: string) => `${PREFIX}:${orgId}:org_info`,
 };

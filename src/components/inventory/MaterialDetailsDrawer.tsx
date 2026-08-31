@@ -283,7 +283,7 @@ export const MaterialDetailsDrawer: React.FC = () => {
 
             {isBelowMin && (
               <div className="mt-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs">
-                <strong>Material abaixo do mínimo</strong> — módulo de Compras será conectado na Fase 2B.
+                <strong>Material abaixo do mínimo</strong> — gere uma solicitação no módulo de Compras.
               </div>
             )}
           </div>

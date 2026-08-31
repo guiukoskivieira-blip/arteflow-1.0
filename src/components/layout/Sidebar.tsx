@@ -10,7 +10,6 @@ import {
   Truck,
   Settings,
   Layers,
-  Sparkles,
 } from 'lucide-react';
 
 interface NavItem {
@@ -25,10 +24,10 @@ const navItems: NavItem[] = [
   { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
   { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
   { id: 'production', label: 'Produção', icon: Kanban, isCentral: true },
-  { id: 'inventory', label: 'Estoque', icon: Package, badge: 'Fase 2' },
-  { id: 'purchasing', label: 'Compras', icon: ShoppingBag, badge: 'Fase 2' },
-  { id: 'financial', label: 'Financeiro', icon: DollarSign, badge: 'Fase 2' },
-  { id: 'dispatch', label: 'Expedição', icon: Truck, badge: 'Fase 2' },
+  { id: 'inventory', label: 'Estoque', icon: Package },
+  { id: 'purchasing', label: 'Compras', icon: ShoppingBag },
+  { id: 'financial', label: 'Financeiro', icon: DollarSign },
+  { id: 'dispatch', label: 'Expedição', icon: Truck },
   { id: 'settings', label: 'Configurações', icon: Settings },
 ];
 
@@ -104,18 +103,6 @@ export const Sidebar: React.FC = () => {
         })}
       </nav>
 
-      {/* Bottom Info Card */}
-      <div className="p-3 border-t border-slate-800/80 bg-slate-950/20">
-        <div className="p-3 rounded-lg bg-slate-800/60 border border-slate-700/60">
-          <div className="flex items-center gap-2 text-teal-400 text-xs font-semibold mb-1">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Fase 1 — Standalone</span>
-          </div>
-          <p className="text-[11px] text-slate-400 leading-relaxed">
-            Gestão operacional com persistência local e OPs desacopladas.
-          </p>
-        </div>
-      </div>
     </aside>
   );
 };

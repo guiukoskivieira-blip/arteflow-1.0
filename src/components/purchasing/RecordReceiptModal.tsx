@@ -85,7 +85,7 @@ export const RecordReceiptModal: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isRecordReceiptModalOpen, setIsRecordReceiptModalOpen]);
 
-  if (!isRecordReceiptModalOpen || !selectedPurchaseOrder) return null;
+  if (!isRecordReceiptModalOpen || !selectedPurchaseOrder || selectedPurchaseOrder.status === 'RECEIVED') return null;
 
   const handleQtyChange = (idx: number, val: string) => {
     setItemsState((prev) => {
@@ -154,6 +154,7 @@ export const RecordReceiptModal: React.FC = () => {
 
       setCompletedReceipt(result.receipt);
       setAffectedJobId(jobCandidate);
+      setIsRecordReceiptModalOpen(false);
     } catch (err: any) {
       setError(err.message || 'Erro ao registrar recebimento.');
     } finally {
@@ -389,7 +390,7 @@ export const RecordReceiptModal: React.FC = () => {
               </button>
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || itemsState.every((item) => item.pendingQty <= 0)}
                 className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold transition-colors shadow-xs"
               >
                 {isSubmitting ? 'Gravando Entrada...' : 'Confirmar Recebimento Físico'}

@@ -606,6 +606,7 @@ export class ProcurementService {
 
     const now = new Date().toISOString();
     order.status = 'ISSUED';
+    order.issuedAt = now;
     order.updatedAt = now;
 
     const eventToEmit: ProcurementEvent = {

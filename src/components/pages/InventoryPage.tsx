@@ -121,9 +121,6 @@ export const InventoryPage: React.FC = () => {
             <h2 className="text-lg md:text-xl font-bold text-slate-900 leading-tight">
               Estoque de Materiais & Insumos
             </h2>
-            <span className="text-[10px] font-bold px-1.5 py-0.2 bg-teal-50 text-teal-700 border border-teal-200 rounded">
-              Fase 2A
-            </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
             Controle de saldo físico, reservas ativas e disponibilidade para Ordens de Produção

@@ -11,7 +11,7 @@ export const DispatchPage: React.FC = () => {
       <EmptyModulePlaceholder
         title="Expedição & Logística de Entrega"
         description="Roteirização de frotas de entrega, retirada no balcão, etiquetas de despacho e conferência de volumes."
-        phase="Módulo planejado para a Fase 2"
+        phase="Em breve"
         icon={Truck}
         plannedFeatures={[
           'Geração de etiquetas térmicas de volume com QR Code da OP',

@@ -106,6 +106,9 @@ describe('Procurement & Inventory Integration (Fase 2B.2B)', () => {
     });
 
     const issuedOrder = await service.issuePurchaseOrder(ORG1, order.id, USER_ID, USER_NAME);
+    expect(issuedOrder.issuedAt).toBeTruthy();
+    const persistedOrder = await orderRepo.getById(ORG1, order.id);
+    expect(persistedOrder?.issuedAt).toBe(issuedOrder.issuedAt);
     return { order: issuedOrder, orderItem: items[0], supplier };
   }
 

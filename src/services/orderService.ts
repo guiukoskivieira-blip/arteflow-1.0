@@ -152,7 +152,7 @@ export class OrderService {
         stageId: itemInput.initialStageId || 'stage-entry',
         artworkGate: 'NOT_RECEIVED',
         materialGate: 'NOT_CHECKED',
-        financialGate: 'RELEASED',
+        financialGate: 'PAYMENT_PENDING',
         priority: itemInput.priority || 'MEDIUM',
         sector: orderItem.sector,
         assignee: null,

@@ -15,7 +15,7 @@ import {
 } from '../types/inventory';
 import { MaterialGate, DataOrigin } from '../types/domain';
 import { isValidQuantityMilli, isValidNonNegativeQuantityMilli } from '../domain/quantity';
-import { isValidNonNegativeCents } from '../domain/money';
+import { isValidNonNegativeCents, computeWeightedAverageCostCents } from '../domain/money';
 
 export class StockIntegrityError extends Error {
   constructor(message: string) {
@@ -287,13 +287,13 @@ export class InventoryService {
 
     // Recálculo do custo médio ponderado determinístico
     if (input.unitCostCents !== undefined && isValidNonNegativeCents(input.unitCostCents)) {
-      const incomingUnitCost = input.unitCostCents;
-      const incomingTotalCost = input.totalCostCents ?? Math.round((incomingQty / 1000) * incomingUnitCost);
-      const currentTotalVal = Math.round((previousBalance / 1000) * material.averageCostCents);
-
-      if (newStock > 0) {
-        material.averageCostCents = Math.round((currentTotalVal + incomingTotalCost) / (newStock / 1000));
-      }
+      material.averageCostCents = computeWeightedAverageCostCents(
+        previousBalance,
+        material.averageCostCents,
+        incomingQty,
+        input.unitCostCents,
+        input.totalCostCents
+      );
     }
 
     material.stockOnHandMilli = newStock;

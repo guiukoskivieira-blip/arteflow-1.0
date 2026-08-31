@@ -1,4 +1,4 @@
-# Logs
+﻿# Logs
 logs
 *.log
 npm-debug.log*
@@ -25,3 +25,9 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# Test results
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/

@@ -158,7 +158,7 @@ export const ReceiptModal: React.FC = () => {
             <select
               value={selectedMatId}
               onChange={(e) => setSelectedMatId(e.target.value)}
-              className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none font-semibold text-slate-800"
+              className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none font-semibold text-slate-800"
             >
               {materials.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -179,7 +179,7 @@ export const ReceiptModal: React.FC = () => {
                 placeholder="Ex: 50"
                 value={quantityStr}
                 onChange={(e) => setQuantityStr(e.target.value)}
-                className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
               />
             </div>
 
@@ -192,7 +192,7 @@ export const ReceiptModal: React.FC = () => {
                 placeholder="0,00"
                 value={unitCostStr}
                 onChange={(e) => setUnitCostStr(e.target.value)}
-                className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
               />
             </div>
           </div>
@@ -206,7 +206,7 @@ export const ReceiptModal: React.FC = () => {
               placeholder="Ex: Distribuidora Brasil / NF-e 4920"
               value={supplierName}
               onChange={(e) => setSupplierName(e.target.value)}
-              className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+              className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
             />
           </div>
 
@@ -218,7 +218,7 @@ export const ReceiptModal: React.FC = () => {
               type="text"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-teal-500 focus:outline-none"
+              className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
             />
           </div>
 

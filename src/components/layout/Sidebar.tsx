@@ -9,7 +9,6 @@ import {
   DollarSign,
   Truck,
   Settings,
-  Layers,
 } from 'lucide-react';
 import { useOptionalAuth } from '../../context/AuthContext';
 import type { ArteFlowPermission } from '../../auth/permissions';
@@ -42,26 +41,15 @@ export const Sidebar: React.FC = () => {
   const totalActiveJobs = jobs.length;
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 bg-slate-900 text-slate-300 border-r border-slate-800 flex-shrink-0 select-none">
+    <aside className="hidden lg:flex flex-col w-[244px] bg-gradient-to-b from-[#075aa9] via-[#087bc2] to-[#08a8ca] text-blue-50 border-r border-sky-900/10 flex-shrink-0 select-none shadow-[8px_0_28px_rgba(2,94,154,0.08)]">
       {/* Brand Header */}
-      <div className="h-16 flex items-center gap-3 px-5 border-b border-slate-800/80 bg-slate-950/40">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-400 flex items-center justify-center text-white shadow-md shadow-teal-900/30">
-          <Layers className="w-5 h-5" />
-        </div>
-        <div className="flex flex-col">
-          <div className="flex items-center gap-1.5">
-            <span className="font-extrabold text-white text-base tracking-tight">ArteFlow</span>
-            <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 bg-teal-500/20 text-teal-300 rounded border border-teal-500/30">
-              Beta
-            </span>
-          </div>
-          <span className="text-[11px] text-slate-400 font-medium tracking-wide">Ecossistema Prexyon</span>
-        </div>
+      <div className="h-[86px] flex items-center px-5 border-b border-white/15 bg-white/[0.04]">
+        <img src="/brand/arteflow-white.png" alt="ArteFlow — Gestão da Produção" className="h-[54px] w-[180px] object-contain object-left" />
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+      <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
+        <div className="px-3 pb-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-100/70">
           Operação & Fluxo
         </div>
 
@@ -73,16 +61,16 @@ export const Sidebar: React.FC = () => {
             <button
               key={item.id}
               onClick={() => setActivePage(item.id)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all group ${
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all group ${
                 isActive
-                  ? 'bg-teal-600 text-white font-semibold shadow-sm'
-                  : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                  ? 'bg-white text-[#086aaa] font-bold shadow-[0_8px_20px_rgba(3,67,120,0.16)]'
+                  : 'text-blue-50/90 hover:bg-white/10 hover:text-white'
               }`}
             >
               <div className="flex items-center gap-3">
                 <Icon
                   className={`w-4 h-4 transition-colors ${
-                    isActive ? 'text-white' : 'text-slate-400 group-hover:text-teal-400'
+                    isActive ? 'text-[#079ac7]' : 'text-blue-100/75 group-hover:text-white'
                   }`}
                 />
                 <span>{item.label}</span>
@@ -91,7 +79,7 @@ export const Sidebar: React.FC = () => {
               {item.isCentral && totalActiveJobs > 0 && (
                 <span
                   className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${
-                    isActive ? 'bg-white text-teal-900' : 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
+                    isActive ? 'bg-sky-50 text-sky-700' : 'bg-white/15 text-white border border-white/15'
                   }`}
                 >
                   {totalActiveJobs}

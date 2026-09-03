@@ -5,16 +5,44 @@
 @layer base {
   :root {
     color-scheme: light;
+    font-synthesis: none;
+    --prexyon-navy: #07192d;
+    --arteflow-blue: #087bc2;
+    --arteflow-cyan: #08a8ca;
+    --surface-page: #f4f7fb;
   }
   
   html, body {
     height: 100%;
     margin: 0;
     padding: 0;
-    background-color: #f8fafc;
+    background-color: var(--surface-page);
     color: #0f172a;
     -webkit-tap-highlight-color: transparent;
   }
+}
+
+@layer components {
+  .af-surface {
+    @apply rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.045)];
+  }
+
+  .af-primary-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#087bc2] to-[#08a8ca] px-4 py-2.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(2,132,199,0.20)] transition hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .af-focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-400;
+  }
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid rgba(14, 165, 233, 0.65);
+  outline-offset: 2px;
 }
 
 /* Custom scrollbars */

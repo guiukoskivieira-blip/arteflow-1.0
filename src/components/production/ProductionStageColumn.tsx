@@ -38,11 +38,11 @@ export const ProductionStageColumn: React.FC<ProductionStageColumnProps> = ({
       ref={setNodeRef}
       className={`w-80 flex-shrink-0 flex flex-col rounded-xl border transition-all duration-200 max-h-full ${
         isOver && isAllowedDestination
-          ? 'bg-teal-50/70 border-teal-500 ring-2 ring-teal-400 shadow-md'
+          ? 'bg-sky-50/70 border-sky-500 ring-2 ring-sky-400 shadow-md'
           : isBlockedOver
           ? 'bg-red-50/70 border-red-400 ring-2 ring-red-400/60 shadow-md'
           : isAllowedDestination
-          ? 'bg-teal-50/20 border-teal-300/80'
+          ? 'bg-sky-50/20 border-sky-300/80'
           : 'bg-slate-100/80 border-slate-200/80'
       }`}
     >
@@ -78,7 +78,7 @@ export const ProductionStageColumn: React.FC<ProductionStageColumnProps> = ({
 
       {/* Destination feedback banner while dragging */}
       {isOver && isAllowedDestination && (
-        <div className="px-3 py-1.5 bg-teal-500 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-xs">
+        <div className="px-3 py-1.5 bg-sky-500 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-xs">
           <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
           <span>Solte para mover para {stage.name}</span>
         </div>

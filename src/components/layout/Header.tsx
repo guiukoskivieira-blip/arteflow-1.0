@@ -43,7 +43,7 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200/80 px-4 md:px-6 flex items-center justify-between flex-shrink-0 z-10">
+    <header className="h-[74px] bg-white/95 backdrop-blur border-b border-slate-200/80 px-4 md:px-7 flex items-center justify-between flex-shrink-0 z-10">
       {/* Left: Mobile Toggle & Page Title */}
       <div className="flex items-center gap-3">
         <button
@@ -55,7 +55,7 @@ export const Header: React.FC = () => {
         </button>
 
         <div>
-          <h1 className="text-base md:text-lg font-bold text-slate-900 leading-tight">
+          <h1 className="text-base md:text-[19px] font-extrabold tracking-tight text-slate-950 leading-tight">
             {getPageTitle()}
           </h1>
           <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -71,16 +71,16 @@ export const Header: React.FC = () => {
       <div className="flex items-center gap-2 md:gap-3">
         {/* Honest Local Demo Operator Selector */}
         {mode === 'standalone' ? <div
-          className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200/80"
+          className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80"
           title="Seletor de operador local para assinatura de eventos de auditoria"
         >
-          <UserCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0" />
+          <UserCircle2 className="w-4 h-4 text-sky-600 flex-shrink-0" />
           <div className="flex flex-col">
             <div className="flex items-center gap-1">
               <span className="text-[10px] uppercase font-bold text-slate-400">
                 Operador Local (Demo):
               </span>
-              <span className="text-[9px] px-1 bg-teal-50 text-teal-700 border border-teal-200 rounded font-semibold">
+              <span className="text-[9px] px-1 bg-sky-50 text-sky-700 border border-sky-200 rounded font-semibold">
                 Sem Auth
               </span>
             </div>
@@ -115,7 +115,7 @@ export const Header: React.FC = () => {
         {/* Quick New Order Button */}
         {can('arteflow.orders.create') && <button
           onClick={() => setIsNewOrderModalOpen(true)}
-          className="inline-flex items-center gap-2 px-3 md:px-4 py-2 text-xs md:text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 rounded-lg shadow-sm transition-all flex-shrink-0"
+          className="inline-flex items-center gap-2 px-3.5 md:px-4 py-2.5 text-xs md:text-sm font-bold text-white bg-gradient-to-r from-[#087ac1] to-[#08a9ca] hover:from-[#066cae] hover:to-[#0798b8] active:scale-[0.98] rounded-xl shadow-[0_8px_20px_rgba(2,132,199,0.22)] transition-all flex-shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Novo Pedido</span>

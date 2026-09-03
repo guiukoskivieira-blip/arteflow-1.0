@@ -88,14 +88,14 @@ export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({
       onClick={handleOpenDetails}
       className={`bg-white rounded-xl border transition-all duration-200 hover:shadow-md cursor-pointer flex flex-col p-3.5 space-y-2.5 relative group select-none ${
         isOverlay
-          ? 'shadow-2xl ring-2 ring-teal-500 border-teal-400 rotate-1 scale-[1.02] opacity-95 z-50 cursor-grabbing'
+          ? 'shadow-2xl ring-2 ring-sky-500 border-sky-400 rotate-1 scale-[1.02] opacity-95 z-50 cursor-grabbing'
           : isDragging
-          ? 'opacity-40 border-dashed border-teal-400'
+          ? 'opacity-40 border-dashed border-sky-400'
           : blockDetails.isBlocked
           ? 'border-red-300 ring-1 ring-red-400/30'
           : overdue
           ? 'border-amber-300 ring-1 ring-amber-400/30'
-          : 'border-slate-200/90 hover:border-teal-300'
+          : 'border-slate-200/90 hover:border-sky-300'
       }`}
     >
       {/* Header: Drag Handle, OP Code, Order Code, Origin, Priority */}
@@ -108,7 +108,7 @@ export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({
               {...attributes}
               {...listeners}
               onClick={(e) => e.stopPropagation()}
-              className="p-1 -ml-1 text-slate-400 hover:text-teal-600 rounded hover:bg-teal-50 cursor-grab active:cursor-grabbing focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="p-1 -ml-1 text-slate-400 hover:text-sky-600 rounded hover:bg-sky-50 cursor-grab active:cursor-grabbing focus:outline-none focus:ring-2 focus:ring-sky-500"
               aria-label={`Mover ${job.jobCode} entre etapas`}
               title="Arraste para mover entre etapas ou use o teclado (Espaço/Enter)"
             >
@@ -227,7 +227,7 @@ export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({
             e.stopPropagation();
             handleOpenDetails();
           }}
-          className="p-1 text-slate-400 hover:text-teal-600 rounded hover:bg-teal-50"
+          className="p-1 text-slate-400 hover:text-sky-600 rounded hover:bg-sky-50"
           title="Ver detalhes da OP"
         >
           <Eye className="w-3.5 h-3.5" />
@@ -240,7 +240,7 @@ export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({
           className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold transition-colors ${
             isLastStage || !nextTransitionCheck.allowed
               ? 'text-slate-300 bg-slate-50 cursor-not-allowed'
-              : 'bg-teal-50 text-teal-700 hover:bg-teal-100 hover:text-teal-800'
+              : 'bg-sky-50 text-sky-700 hover:bg-sky-100 hover:text-sky-800'
           }`}
           title={
             isLastStage

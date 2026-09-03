@@ -2,6 +2,7 @@ import React from 'react';
 import { Sidebar } from './Sidebar';
 import { MobileDrawer } from './MobileDrawer';
 import { Header } from './Header';
+import { PrexyonBar } from './PrexyonBar';
 import { NewOrderModal } from '../orders/NewOrderModal';
 import { OrderDetailsModal } from '../orders/OrderDetailsModal';
 import { ProductionJobDrawer } from '../production/ProductionJobDrawer';
@@ -20,16 +21,19 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const { feedbackNotification, clearFeedbackNotification } = useArteFlow();
 
   return (
-    <div className="flex h-screen w-full bg-slate-50 overflow-hidden text-slate-900 font-sans relative">
-      {/* Desktop Sidebar */}
-      <Sidebar />
+    <div className="flex h-screen w-full flex-col overflow-hidden bg-[#f4f7fb] text-slate-900 font-sans relative">
+      <PrexyonBar />
 
-      {/* Mobile Drawer */}
-      <MobileDrawer />
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        {/* Desktop Sidebar */}
+        <Sidebar />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-        <Header />
+        {/* Mobile Drawer */}
+        <MobileDrawer />
+
+        {/* Main Content Area */}
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <Header />
 
         {/* Global Feedback Banner / Toast */}
         {feedbackNotification && (
@@ -56,9 +60,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </div>
         )}
 
-        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden flex flex-col bg-slate-50/50">
-          {children}
-        </main>
+          <main className="flex min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.055),transparent_31%),#f4f7fb]">
+            {children}
+          </main>
+        </div>
       </div>
 
       {/* Global Modals & Drawers accessible from all pages */}

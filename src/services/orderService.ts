@@ -198,10 +198,26 @@ export class OrderService {
     };
 
     // Salva no repositório
-    await this.orderRepo.save(organizationId, order);
-    await this.jobRepo.saveMany(organizationId, createdJobs);
-    await this.eventRepo.appendMany(organizationId, initialEvents);
+    const savedOrder = await this.orderRepo.save(organizationId, order);
+    const savedItemByGeneratedJobId = new Map(
+      savedOrder.items.filter(item => item.generatedJobId).map(item => [item.generatedJobId, item])
+    );
+    const linkedJobs = createdJobs.map(job => {
+      const savedItem = savedItemByGeneratedJobId.get(job.id);
+      return {
+        ...job,
+        orderId: savedOrder.id,
+        orderNumber: savedOrder.orderNumber,
+        orderItemId: savedItem?.id ?? job.orderItemId,
+      };
+    });
+    const linkedEvents = initialEvents.map(event => ({
+      ...event,
+      description: event.description.replace(orderNumber, savedOrder.orderNumber),
+    }));
+    await this.jobRepo.saveMany(organizationId, linkedJobs);
+    await this.eventRepo.appendMany(organizationId, linkedEvents);
 
-    return { order, jobs: createdJobs };
+    return { order: savedOrder, jobs: linkedJobs };
   }
 }

@@ -41,6 +41,11 @@ interface PermissionDefinitionRow {
   permission_key: string;
 }
 
+interface ProductPermissionRow {
+  permission_key: string;
+  is_granted: boolean;
+}
+
 export class TenantBootstrapError extends Error {
   constructor(
     public readonly code:
@@ -193,6 +198,18 @@ export async function bootstrapArteFlowTenant(
   );
   const definitionById = new Map(definitions.map(item => [item.id, item.permission_key]));
   const grants = new Set<string>();
+
+  const { data: productPermissions, error: productPermissionError } = await supabase
+    .from('product_permissions')
+    .select('permission_key,is_granted')
+    .eq('organization_id', organization.id)
+    .eq('user_id', authUser.id)
+    .eq('product_key', 'arteflow');
+  if (productPermissionError) throw new TenantBootstrapError('BOOTSTRAP_FAILED');
+  for (const permission of (productPermissions ?? []) as ProductPermissionRow[]) {
+    if (permission.is_granted) grants.add(permission.permission_key);
+    else grants.delete(permission.permission_key);
+  }
 
   const { data: assignments, error: assignmentError } = await supabase
     .from('prexyon_user_product_roles')

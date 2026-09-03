@@ -40,6 +40,8 @@ import {
   ProcurementSeedState,
 } from '../repositories/storageKeys';
 import { LocalStorageOrderRepository } from '../repositories/localStorageOrderRepository';
+import { SupabaseOrderRepository } from '../repositories/supabaseOrderRepository';
+import { getSupabaseClient } from '../services/supabaseClient';
 import { LocalStorageJobRepository } from '../repositories/localStorageJobRepository';
 import { LocalStorageStageRepository } from '../repositories/localStorageStageRepository';
 import { LocalStorageEventRepository } from '../repositories/localStorageEventRepository';
@@ -376,7 +378,12 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
   const [feedbackNotification, setFeedbackNotification] = useState<FeedbackNotification | null>(null);
 
   // Instancia repositórios
-  const orderRepo = useMemo(() => new LocalStorageOrderRepository(), []);
+  const orderRepo = useMemo(() => {
+    if (allowDemoData) return new LocalStorageOrderRepository();
+    const supabase = getSupabaseClient();
+    if (!supabase) throw new Error('Supabase indisponível no modo conectado.');
+    return new SupabaseOrderRepository(supabase);
+  }, [allowDemoData]);
   const jobRepo = useMemo(() => new LocalStorageJobRepository(), []);
   const stageRepo = useMemo(() => new LocalStorageStageRepository(), []);
   const eventRepo = useMemo(() => new LocalStorageEventRepository(), []);
@@ -649,7 +656,13 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
   ]);
 
   useEffect(() => {
-    reloadAll();
+    void reloadAll().catch((error: unknown) => {
+      setFeedbackNotification({
+        type: 'error',
+        title: 'Não foi possível carregar os pedidos',
+        message: error instanceof Error ? error.message : 'Falha inesperada ao consultar a persistência operacional.',
+      });
+    });
   }, [reloadAll]);
 
   // Manter entidades selecionadas atualizadas

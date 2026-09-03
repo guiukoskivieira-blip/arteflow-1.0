@@ -12,6 +12,8 @@ import {
   Layers,
   X,
 } from 'lucide-react';
+import { useOptionalAuth } from '../../context/AuthContext';
+import type { ArteFlowPermission } from '../../auth/permissions';
 
 interface NavItem {
   id: AppPage;
@@ -19,21 +21,24 @@ interface NavItem {
   icon: React.ElementType;
   badge?: string;
   isCentral?: boolean;
+  permission: ArteFlowPermission;
 }
 
 const navItems: NavItem[] = [
-  { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
-  { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
-  { id: 'production', label: 'Produção', icon: Kanban, isCentral: true },
-  { id: 'inventory', label: 'Estoque', icon: Package },
-  { id: 'purchasing', label: 'Compras', icon: ShoppingBag },
-  { id: 'financial', label: 'Financeiro', icon: DollarSign },
-  { id: 'dispatch', label: 'Expedição', icon: Truck },
-  { id: 'settings', label: 'Configurações', icon: Settings },
+  { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard, permission: 'arteflow.view' },
+  { id: 'orders', label: 'Pedidos', icon: ShoppingCart, permission: 'arteflow.orders.view' },
+  { id: 'production', label: 'Produção', icon: Kanban, isCentral: true, permission: 'arteflow.production.view' },
+  { id: 'inventory', label: 'Estoque', icon: Package, permission: 'arteflow.inventory.view' },
+  { id: 'purchasing', label: 'Compras', icon: ShoppingBag, permission: 'arteflow.procurement.view' },
+  { id: 'financial', label: 'Financeiro', icon: DollarSign, permission: 'arteflow.finance.view' },
+  { id: 'dispatch', label: 'Expedição', icon: Truck, permission: 'arteflow.production.view' },
+  { id: 'settings', label: 'Configurações', icon: Settings, permission: 'arteflow.settings.manage' },
 ];
 
 export const MobileDrawer: React.FC = () => {
   const { isMobileDrawerOpen, setIsMobileDrawerOpen, activePage, setActivePage, jobs } = useArteFlow();
+  const auth = useOptionalAuth();
+  const can = auth?.can ?? (() => true);
 
   if (!isMobileDrawerOpen) return null;
 
@@ -73,7 +78,7 @@ export const MobileDrawer: React.FC = () => {
 
         {/* Links */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
+          {navItems.filter(item => can(item.permission)).map((item) => {
             const Icon = item.icon;
             const isActive = activePage === item.id;
 

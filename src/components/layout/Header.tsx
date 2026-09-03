@@ -1,9 +1,15 @@
 import React from 'react';
 import { useArteFlow } from '../../context/ArteFlowContext';
 import { DEMO_USERS } from '../../domain/constants';
-import { Menu, Plus, Building2, UserCircle2 } from 'lucide-react';
+import { Menu, Plus, Building2, UserCircle2, LogOut } from 'lucide-react';
+import { useOptionalAuth } from '../../context/AuthContext';
 
 export const Header: React.FC = () => {
+  const auth = useOptionalAuth();
+  const mode = auth?.mode ?? 'standalone';
+  const tenant = auth?.tenant ?? null;
+  const can = auth?.can ?? (() => true);
+  const signOut = auth?.signOut ?? (async () => undefined);
   const {
     organization,
     currentUser,
@@ -64,7 +70,7 @@ export const Header: React.FC = () => {
       {/* Right: Actions, Honest Local Operator Selector, New Order Button */}
       <div className="flex items-center gap-2 md:gap-3">
         {/* Honest Local Demo Operator Selector */}
-        <div
+        {mode === 'standalone' ? <div
           className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200/80"
           title="Seletor de operador local para assinatura de eventos de auditoria"
         >
@@ -93,16 +99,27 @@ export const Header: React.FC = () => {
               ))}
             </select>
           </div>
-        </div>
+        </div> : (
+          <div className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200/80">
+            <UserCircle2 className="w-4 h-4 text-blue-600" aria-hidden="true" />
+            <div className="flex flex-col max-w-48">
+              <span className="truncate text-xs font-semibold text-slate-800">{currentUser.name}</span>
+              <span className="truncate text-[10px] text-slate-500">{currentUser.email} · {tenant?.membership.role}</span>
+            </div>
+            <button type="button" onClick={() => void signOut()} className="p-1.5 text-slate-500 hover:text-red-600" aria-label="Sair do ArteFlow">
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Quick New Order Button */}
-        <button
+        {can('arteflow.orders.create') && <button
           onClick={() => setIsNewOrderModalOpen(true)}
           className="inline-flex items-center gap-2 px-3 md:px-4 py-2 text-xs md:text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 rounded-lg shadow-sm transition-all flex-shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Novo Pedido</span>
-        </button>
+        </button>}
       </div>
     </header>
   );

@@ -86,6 +86,8 @@ import { computeProcurementSuggestions } from '../services/procurementSuggestion
 import { FinancialIndicators, PaymentMethod, ReceivableAccount, ReceivablePayment } from '../types/financial';
 import { LocalStorageReceivablePaymentRepository, LocalStorageReceivableRepository } from '../repositories/localStorageFinancialRepositories';
 import { FinancialService } from '../services/financialService';
+import { useOptionalAuth } from './AuthContext';
+import type { ArteFlowPermission } from '../auth/permissions';
 
 export type AppPage =
   | 'overview'
@@ -278,9 +280,45 @@ const defaultMaterialFilter: MaterialFilter = {
 
 const ArteFlowContext = createContext<ArteFlowContextType | undefined>(undefined);
 
-export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [organization] = useState<Organization>(DEMO_ORGANIZATION);
-  const [currentUser, setCurrentUser] = useState<User>(DEMO_USERS[0]);
+interface ArteFlowProviderProps {
+  children: React.ReactNode;
+  identity?: { organization: Organization; currentUser: User };
+  allowDemoData?: boolean;
+}
+
+export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
+  children,
+  identity,
+  allowDemoData = true,
+}) => {
+  const access = useOptionalAuth();
+  const organization = identity?.organization ?? DEMO_ORGANIZATION;
+  const [currentUser, setCurrentUserState] = useState<User>(identity?.currentUser ?? DEMO_USERS[0]);
+
+  useEffect(() => {
+    if (identity?.currentUser) setCurrentUserState(identity.currentUser);
+  }, [identity?.currentUser]);
+
+  const setCurrentUser = useCallback((user: User) => {
+    if (!allowDemoData) throw new Error('A troca de usuário não é permitida no modo conectado.');
+    setCurrentUserState(user);
+  }, [allowDemoData]);
+
+  const can = useCallback(
+    (permission: ArteFlowPermission) => access?.can(permission) ?? true,
+    [access]
+  );
+
+  const guardAction = useCallback(
+    <TArgs extends unknown[], TResult,>(
+      permission: ArteFlowPermission,
+      action: (...args: TArgs) => TResult
+    ): ((...args: TArgs) => TResult) => (...args) => {
+      if (!can(permission)) throw new Error(`Acesso negado: ${permission}`);
+      return action(...args);
+    },
+    [can]
+  );
   const [stages, setStages] = useState<WorkflowStage[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [jobs, setJobs] = useState<ProductionJob[]>([]);
@@ -450,6 +488,13 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     let loadedReceivables = await receivableRepo.list(orgId);
     let loadedReceivablePayments = await receivablePaymentRepo.list(orgId);
 
+    if (!allowDemoData) {
+      if (loadedStages.length === 0) {
+        const initialStages = getInitialStages(orgId).map(stage => ({ ...stage, dataOrigin: 'user' as const }));
+        await stageRepo.saveMany(orgId, initialStages);
+        loadedStages = initialStages;
+      }
+    } else {
     const hasUserOrdersOrJobs =
       loadedOrders.some((o) => o.dataOrigin === 'user') ||
       loadedJobs.some((j) => j.dataOrigin === 'user');
@@ -557,6 +602,7 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         window.localStorage.setItem(storageKeys.seedState(orgId), 'APPLIED');
       }
     }
+    }
 
     setStages(loadedStages);
     setOrders(loadedOrders);
@@ -599,6 +645,7 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     receivableRepo,
     receivablePaymentRepo,
     financialService,
+    allowDemoData,
   ]);
 
   useEffect(() => {
@@ -1526,54 +1573,54 @@ export const ArteFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setFeedbackNotification,
         clearFeedbackNotification,
 
-        createManualOrder,
-        transitionProductionJobStage,
+        createManualOrder: guardAction('arteflow.orders.create', createManualOrder),
+        transitionProductionJobStage: guardAction('arteflow.production.manage', transitionProductionJobStage),
         canJobTransitionTo,
-        moveJobStage,
-        moveJobNext,
-        moveJobPrev,
-        updateArtworkGate,
-        updateMaterialGate,
-        updateFinancialGate,
-        updateJobAssignee,
-        updateJobPriority,
-        updateJobDeadline,
-        addJobNote,
+        moveJobStage: guardAction('arteflow.production.manage', moveJobStage),
+        moveJobNext: guardAction('arteflow.production.manage', moveJobNext),
+        moveJobPrev: guardAction('arteflow.production.manage', moveJobPrev),
+        updateArtworkGate: guardAction('arteflow.production.manage', updateArtworkGate),
+        updateMaterialGate: guardAction('arteflow.production.manage', updateMaterialGate),
+        updateFinancialGate: guardAction('arteflow.production.manage', updateFinancialGate),
+        updateJobAssignee: guardAction('arteflow.production.manage', updateJobAssignee),
+        updateJobPriority: guardAction('arteflow.production.manage', updateJobPriority),
+        updateJobDeadline: guardAction('arteflow.production.manage', updateJobDeadline),
+        addJobNote: guardAction('arteflow.production.manage', addJobNote),
         getJobEvents,
 
-        createMaterial,
-        updateMaterial,
-        recordReceipt,
-        adjustStock,
-        addJobRequirement,
-        reserveRequirement,
-        releaseReservation,
-        consumeReservation,
+        createMaterial: guardAction('arteflow.inventory.manage', createMaterial),
+        updateMaterial: guardAction('arteflow.inventory.manage', updateMaterial),
+        recordReceipt: guardAction('arteflow.inventory.manage', recordReceipt),
+        adjustStock: guardAction('arteflow.inventory.manage', adjustStock),
+        addJobRequirement: guardAction('arteflow.inventory.manage', addJobRequirement),
+        reserveRequirement: guardAction('arteflow.inventory.manage', reserveRequirement),
+        releaseReservation: guardAction('arteflow.inventory.manage', releaseReservation),
+        consumeReservation: guardAction('arteflow.inventory.manage', consumeReservation),
         getMaterialAvailability,
         getMaterialMovements,
         getMaterialReservations,
         getJobRequirements,
         getJobReservations,
 
-        createSupplier,
-        updateSupplier,
-        toggleSupplierActive,
-        createPurchaseRequest,
-        cancelPurchaseRequest,
-        createPurchaseOrder,
-        issuePurchaseOrder,
-        cancelPurchaseOrder,
-        recordGoodsReceipt,
+        createSupplier: guardAction('arteflow.procurement.manage', createSupplier),
+        updateSupplier: guardAction('arteflow.procurement.manage', updateSupplier),
+        toggleSupplierActive: guardAction('arteflow.procurement.manage', toggleSupplierActive),
+        createPurchaseRequest: guardAction('arteflow.procurement.manage', createPurchaseRequest),
+        cancelPurchaseRequest: guardAction('arteflow.procurement.manage', cancelPurchaseRequest),
+        createPurchaseOrder: guardAction('arteflow.procurement.manage', createPurchaseOrder),
+        issuePurchaseOrder: guardAction('arteflow.procurement.manage', issuePurchaseOrder),
+        cancelPurchaseOrder: guardAction('arteflow.procurement.manage', cancelPurchaseOrder),
+        recordGoodsReceipt: guardAction('arteflow.procurement.manage', recordGoodsReceipt),
         getPurchaseOrderItems,
         getPurchaseOrderReceipts,
         getPurchaseRequestItems,
         getProcurementEvents,
-        registerReceivablePayment,
+        registerReceivablePayment: guardAction('arteflow.finance.manage', registerReceivablePayment),
 
-        resetDemoEnvironment,
-        resetToDemoSeed,
-        clearOperationalData,
-        clearAllData,
+        resetDemoEnvironment: guardAction('arteflow.settings.manage', resetDemoEnvironment),
+        resetToDemoSeed: guardAction('arteflow.settings.manage', resetToDemoSeed),
+        clearOperationalData: guardAction('arteflow.settings.manage', clearOperationalData),
+        clearAllData: guardAction('arteflow.settings.manage', clearAllData),
         reloadAll,
       }}
     >

@@ -9,8 +9,10 @@ import {
   Server,
   Users,
 } from 'lucide-react';
+import { useOptionalAuth } from '../../context/AuthContext';
 
 export const SettingsPage: React.FC = () => {
+  const mode = useOptionalAuth()?.mode ?? 'standalone';
   const { organization, stages, resetDemoEnvironment, clearOperationalData } = useArteFlow();
   const [feedback, setFeedback] = useState('');
 
@@ -40,7 +42,7 @@ export const SettingsPage: React.FC = () => {
       <div>
         <h2 className="text-xl font-bold text-slate-900">Configurações & Estrutura Operacional</h2>
         <p className="text-xs text-slate-500 mt-1">
-          Parâmetros do tenant, etapas de produção por IDs estáveis e gerenciamento de armazenamento local.
+          Parâmetros da organização e etapas do fluxo operacional.
         </p>
       </div>
 
@@ -55,7 +57,9 @@ export const SettingsPage: React.FC = () => {
       <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 text-xs text-slate-600 flex items-start gap-3">
         <Users className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
         <p className="leading-relaxed">
-          Usuários, equipes e permissões serão administrados centralmente pela Prexyon quando o modo conectado estiver disponível.
+          {mode === 'connected'
+            ? 'Identidade, organização e permissões são administradas centralmente pela Prexyon.'
+            : 'Usuários, equipes e permissões serão administrados centralmente pela Prexyon quando o modo conectado estiver disponível.'}
         </p>
       </div>
 
@@ -77,12 +81,12 @@ export const SettingsPage: React.FC = () => {
             <span className="font-semibold text-slate-800">{organization.segment}</span>
           </div>
 
-          <div>
+          {mode === 'standalone' && <div>
             <span className="text-slate-400 font-medium block">Tenant ID (Isolamento Local):</span>
             <span className="font-mono text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
               {organization.id}
             </span>
-          </div>
+          </div>}
         </div>
       </div>
 
@@ -157,8 +161,8 @@ export const SettingsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Storage Management */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-2xs p-5 space-y-4">
+      {/* Storage Management: development-only; never exposed in connected mode. */}
+      {mode === 'standalone' && <div className="bg-white rounded-xl border border-slate-200 shadow-2xs p-5 space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
           <Server className="w-4 h-4 text-teal-600" />
           <span>Armazenamento & Dados Locais</span>
@@ -195,7 +199,7 @@ export const SettingsPage: React.FC = () => {
             <span>Limpar Dados Operacionais</span>
           </button>
         </div>
-      </div>
+      </div>}
     </div>
   );
 };

@@ -45,6 +45,11 @@ import { getSupabaseClient } from '../services/supabaseClient';
 import { LocalStorageJobRepository } from '../repositories/localStorageJobRepository';
 import { LocalStorageStageRepository } from '../repositories/localStorageStageRepository';
 import { LocalStorageEventRepository } from '../repositories/localStorageEventRepository';
+import {
+  SupabaseProductionJobRepository,
+  SupabaseWorkflowStageRepository,
+  SupabaseProductionEventRepository,
+} from '../repositories/supabaseProductionRepositories';
 import { LocalStorageMaterialRepository } from '../repositories/localStorageMaterialRepository';
 import { LocalStorageRequirementRepository } from '../repositories/localStorageRequirementRepository';
 import { LocalStorageReservationRepository } from '../repositories/localStorageReservationRepository';
@@ -384,9 +389,23 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
     if (!supabase) throw new Error('Supabase indisponível no modo conectado.');
     return new SupabaseOrderRepository(supabase);
   }, [allowDemoData]);
-  const jobRepo = useMemo(() => new LocalStorageJobRepository(), []);
-  const stageRepo = useMemo(() => new LocalStorageStageRepository(), []);
-  const eventRepo = useMemo(() => new LocalStorageEventRepository(), []);
+  const productionRepos = useMemo(() => {
+    if (allowDemoData) return {
+      job: new LocalStorageJobRepository(),
+      stage: new LocalStorageStageRepository(),
+      event: new LocalStorageEventRepository(),
+    };
+    const supabase = getSupabaseClient();
+    if (!supabase) throw new Error('Supabase indisponível no modo conectado.');
+    return {
+      job: new SupabaseProductionJobRepository(supabase),
+      stage: new SupabaseWorkflowStageRepository(supabase),
+      event: new SupabaseProductionEventRepository(supabase),
+    };
+  }, [allowDemoData]);
+  const jobRepo = productionRepos.job;
+  const stageRepo = productionRepos.stage;
+  const eventRepo = productionRepos.event;
   const materialRepo = useMemo(() => new LocalStorageMaterialRepository(), []);
   const requirementRepo = useMemo(() => new LocalStorageRequirementRepository(), []);
   const reservationRepo = useMemo(() => new LocalStorageReservationRepository(), []);
@@ -853,180 +872,58 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
 
   const updateArtworkGate = useCallback(
     async (jobId: string, gate: ArtworkGate, note?: string) => {
-      const job = await jobRepo.getById(organization.id, jobId);
-      if (!job) throw new Error('OP não encontrada.');
-      const oldGate = job.artworkGate;
-      job.artworkGate = gate;
-      job.updatedAt = new Date().toISOString();
-      await jobRepo.save(organization.id, job);
-
-      await eventRepo.append(organization.id, {
-        id: `evt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        jobId: job.id,
-        organizationId: organization.id,
-        eventType: 'ARTWORK_GATE_CHANGED',
-        description: `Gate de Arte alterado de ${oldGate} para ${gate}${note ? ` — Nota: ${note}` : ''}`,
-        fromValue: oldGate,
-        toValue: gate,
-        authorId: currentUser.id,
-        authorName: currentUser.name,
-        timestamp: new Date().toISOString(),
-      });
-
+      await jobService.updateArtworkGate(organization.id, jobId, gate, currentUser, note);
       await reloadAll();
     },
-    [jobRepo, eventRepo, organization.id, currentUser, reloadAll]
+    [jobService, organization.id, currentUser, reloadAll]
   );
 
   const updateMaterialGate = useCallback(
     async (jobId: string, gate: MaterialGate, note?: string) => {
-      const job = await jobRepo.getById(organization.id, jobId);
-      if (!job) throw new Error('OP não encontrada.');
-      const oldGate = job.materialGate;
-      job.materialGate = gate;
-      job.updatedAt = new Date().toISOString();
-      await jobRepo.save(organization.id, job);
-
-      await eventRepo.append(organization.id, {
-        id: `evt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        jobId: job.id,
-        organizationId: organization.id,
-        eventType: 'MATERIAL_GATE_CHANGED',
-        description: `Gate de Material alterado de ${oldGate} para ${gate}${note ? ` — Nota: ${note}` : ''}`,
-        fromValue: oldGate,
-        toValue: gate,
-        authorId: currentUser.id,
-        authorName: currentUser.name,
-        timestamp: new Date().toISOString(),
-      });
-
+      await jobService.updateMaterialGate(organization.id, jobId, gate, currentUser, note);
       await reloadAll();
     },
-    [jobRepo, eventRepo, organization.id, currentUser, reloadAll]
+    [jobService, organization.id, currentUser, reloadAll]
   );
 
   const updateFinancialGate = useCallback(
     async (jobId: string, gate: FinancialGate, note?: string) => {
-      const job = await jobRepo.getById(organization.id, jobId);
-      if (!job) throw new Error('OP não encontrada.');
-      const oldGate = job.financialGate;
-      job.financialGate = gate;
-      job.updatedAt = new Date().toISOString();
-      await jobRepo.save(organization.id, job);
-
-      await eventRepo.append(organization.id, {
-        id: `evt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        jobId: job.id,
-        organizationId: organization.id,
-        eventType: 'FINANCIAL_GATE_CHANGED',
-        description: `Gate Financeiro alterado de ${oldGate} para ${gate}${note ? ` — Nota: ${note}` : ''}`,
-        fromValue: oldGate,
-        toValue: gate,
-        authorId: currentUser.id,
-        authorName: currentUser.name,
-        timestamp: new Date().toISOString(),
-      });
-
+      await jobService.updateFinancialGate(organization.id, jobId, gate, currentUser, note);
       await reloadAll();
     },
-    [jobRepo, eventRepo, organization.id, currentUser, reloadAll]
+    [jobService, organization.id, currentUser, reloadAll]
   );
 
   const updateJobAssignee = useCallback(
     async (jobId: string, assignee: { id: string; name: string; email?: string } | null) => {
-      const job = await jobRepo.getById(organization.id, jobId);
-      if (!job) throw new Error('OP não encontrada.');
-      job.assignee = assignee ? { ...assignee } : null;
-      job.updatedAt = new Date().toISOString();
-      await jobRepo.save(organization.id, job);
-
-      await eventRepo.append(organization.id, {
-        id: `evt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        jobId: job.id,
-        organizationId: organization.id,
-        eventType: 'NOTE_ADDED',
-        description: assignee ? `Responsável atribuído: ${assignee.name}` : 'Responsável desatribuído',
-        authorId: currentUser.id,
-        authorName: currentUser.name,
-        timestamp: new Date().toISOString(),
-      });
-
+      await jobService.updateAssignee(organization.id, jobId, assignee, currentUser);
       await reloadAll();
     },
-    [jobRepo, eventRepo, organization.id, currentUser, reloadAll]
+    [jobService, organization.id, currentUser, reloadAll]
   );
 
   const updateJobPriority = useCallback(
     async (jobId: string, priority: Priority) => {
-      const job = await jobRepo.getById(organization.id, jobId);
-      if (!job) throw new Error('OP não encontrada.');
-      const old = job.priority;
-      job.priority = priority;
-      job.updatedAt = new Date().toISOString();
-      await jobRepo.save(organization.id, job);
-
-      await eventRepo.append(organization.id, {
-        id: `evt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        jobId: job.id,
-        organizationId: organization.id,
-        eventType: 'NOTE_ADDED',
-        description: `Prioridade alterada de ${old} para ${priority}`,
-        authorId: currentUser.id,
-        authorName: currentUser.name,
-        timestamp: new Date().toISOString(),
-      });
-
+      await jobService.updatePriority(organization.id, jobId, priority, currentUser);
       await reloadAll();
     },
-    [jobRepo, eventRepo, organization.id, currentUser, reloadAll]
+    [jobService, organization.id, currentUser, reloadAll]
   );
 
   const updateJobDeadline = useCallback(
     async (jobId: string, deadlineISO: string) => {
-      const job = await jobRepo.getById(organization.id, jobId);
-      if (!job) throw new Error('OP não encontrada.');
-      job.deadlineISO = deadlineISO;
-      job.updatedAt = new Date().toISOString();
-      await jobRepo.save(organization.id, job);
-
-      await eventRepo.append(organization.id, {
-        id: `evt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        jobId: job.id,
-        organizationId: organization.id,
-        eventType: 'NOTE_ADDED',
-        description: `Prazo de entrega alterado para ${new Date(deadlineISO).toLocaleDateString('pt-BR')}`,
-        authorId: currentUser.id,
-        authorName: currentUser.name,
-        timestamp: new Date().toISOString(),
-      });
-
+      await jobService.updateDeadline(organization.id, jobId, deadlineISO, currentUser);
       await reloadAll();
     },
-    [jobRepo, eventRepo, organization.id, currentUser, reloadAll]
+    [jobService, organization.id, currentUser, reloadAll]
   );
 
   const addJobNote = useCallback(
     async (jobId: string, note: string) => {
-      const job = await jobRepo.getById(organization.id, jobId);
-      if (!job) throw new Error('OP não encontrada.');
-      job.technicalNotes = job.technicalNotes ? `${job.technicalNotes}\n${note}` : note;
-      job.updatedAt = new Date().toISOString();
-      await jobRepo.save(organization.id, job);
-
-      await eventRepo.append(organization.id, {
-        id: `evt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        jobId: job.id,
-        organizationId: organization.id,
-        eventType: 'NOTE_ADDED',
-        description: `Nota adicionada: ${note}`,
-        authorId: currentUser.id,
-        authorName: currentUser.name,
-        timestamp: new Date().toISOString(),
-      });
-
+      await jobService.addNote(organization.id, jobId, note, currentUser);
       await reloadAll();
     },
-    [jobRepo, eventRepo, organization.id, currentUser, reloadAll]
+    [jobService, organization.id, currentUser, reloadAll]
   );
 
   const getJobEvents = useCallback(
@@ -1431,6 +1328,7 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
   // ==========================================
 
   const resetDemoEnvironment = useCallback(async () => {
+    if (!allowDemoData) throw new Error('O ambiente conectado não pode ser redefinido por armazenamento local.');
     const orgId = organization.id;
 
     if (typeof window !== 'undefined' && window.localStorage) {
@@ -1459,11 +1357,12 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
     }
 
     await reloadAll();
-  }, [organization.id, reloadAll]);
+  }, [allowDemoData, organization.id, reloadAll]);
 
   const resetToDemoSeed = resetDemoEnvironment;
 
   const clearOperationalData = useCallback(async () => {
+    if (!allowDemoData) throw new Error('A limpeza local só está disponível no modo standalone.');
     const orgId = organization.id;
 
     if (typeof window !== 'undefined' && window.localStorage) {
@@ -1491,7 +1390,7 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
     }
 
     await reloadAll();
-  }, [organization.id, reloadAll]);
+  }, [allowDemoData, organization.id, reloadAll]);
 
   const clearAllData = clearOperationalData;
 

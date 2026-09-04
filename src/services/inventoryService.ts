@@ -13,7 +13,7 @@ import {
   StockMovement,
   MaterialUnit,
 } from '../types/inventory';
-import { MaterialGate, DataOrigin } from '../types/domain';
+import { MaterialGate, DataOrigin, ProductionJob } from '../types/domain';
 import { isValidQuantityMilli, isValidNonNegativeQuantityMilli } from '../domain/quantity';
 import { isValidNonNegativeCents, computeWeightedAverageCostCents } from '../domain/money';
 
@@ -769,6 +769,21 @@ export class InventoryService {
     const derivedGate = await this.deriveJobMaterialGate(organizationId, jobId);
     if (job.materialGate !== derivedGate) {
       const prevGate = job.materialGate;
+      const serverRepo = this.jobRepo as IProductionJobRepository & {
+        serverManaged?: boolean;
+        updateAtomic?: (organizationId: string, jobId: string, version: number, field: string, value: string, note?: string) => Promise<ProductionJob>;
+      };
+      if (serverRepo.serverManaged && serverRepo.updateAtomic) {
+        await serverRepo.updateAtomic(
+          organizationId,
+          jobId,
+          job.version ?? 1,
+          'material_gate',
+          derivedGate,
+          'Gate atualizado automaticamente pelo estoque'
+        );
+        return derivedGate;
+      }
       job.materialGate = derivedGate;
       job.updatedAt = new Date().toISOString();
       await this.jobRepo.save(organizationId, job);

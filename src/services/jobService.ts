@@ -187,6 +187,15 @@ export class JobService {
     return `${prefix}-${timestamp}-${random}`;
   }
 
+  private get serverRepo() {
+    return this.jobRepo as IProductionJobRepository & {
+      serverManaged?: boolean;
+      moveAtomic?: (organizationId: string, input: TransitionProductionJobStageInput, expectedVersion: number) => Promise<ProductionJob>;
+      updateAtomic?: (organizationId: string, jobId: string, version: number, field: string, value: string, note?: string) => Promise<ProductionJob>;
+      addNoteAtomic?: (organizationId: string, jobId: string, note: string) => Promise<void>;
+    };
+  }
+
   /**
    * Função canônica única de transição de etapa de uma OP.
    * Usada por Arraste (Drag-and-Drop), Teclado e Botões.
@@ -235,6 +244,10 @@ export class JobService {
     const check = canTransitionStage(job, input.targetStageId, stages, hasRequirements);
     if (!check.allowed) {
       throw new Error(check.reason || 'Movimentação não permitida pelas regras operacionais.');
+    }
+
+    if (this.serverRepo.serverManaged && this.serverRepo.moveAtomic) {
+      return this.serverRepo.moveAtomic(organizationId, input, job.version ?? 1);
     }
 
     const prevStage = sortedStages[currentIndex];
@@ -378,6 +391,10 @@ export class JobService {
     const prevGate = job.artworkGate;
     if (prevGate === newGate && !note) return job;
 
+    if (this.serverRepo.serverManaged && this.serverRepo.updateAtomic) {
+      return this.serverRepo.updateAtomic(organizationId, jobId, job.version ?? 1, 'artwork_gate', newGate, note);
+    }
+
     const nowISO = new Date().toISOString();
     const updatedJob: ProductionJob = {
       ...job,
@@ -420,6 +437,10 @@ export class JobService {
 
     const prevGate = job.materialGate;
     if (prevGate === newGate && !note) return job;
+
+    if (this.serverRepo.serverManaged && this.serverRepo.updateAtomic) {
+      return this.serverRepo.updateAtomic(organizationId, jobId, job.version ?? 1, 'material_gate', newGate, note);
+    }
 
     const nowISO = new Date().toISOString();
     const updatedJob: ProductionJob = {
@@ -464,6 +485,10 @@ export class JobService {
     const prevGate = job.financialGate;
     if (prevGate === newGate && !note) return job;
 
+    if (this.serverRepo.serverManaged && this.serverRepo.updateAtomic) {
+      return this.serverRepo.updateAtomic(organizationId, jobId, job.version ?? 1, 'financial_gate', newGate, note);
+    }
+
     const nowISO = new Date().toISOString();
     const updatedJob: ProductionJob = {
       ...job,
@@ -506,6 +531,10 @@ export class JobService {
     const prevAssigneeName = job.assignee?.name || 'Não atribuído';
     const newAssigneeName = assignee?.name || 'Não atribuído';
 
+    if (this.serverRepo.serverManaged && this.serverRepo.updateAtomic) {
+      return this.serverRepo.updateAtomic(organizationId, jobId, job.version ?? 1, 'assignee', assignee?.id ?? '');
+    }
+
     const nowISO = new Date().toISOString();
     const updatedJob: ProductionJob = {
       ...job,
@@ -544,6 +573,10 @@ export class JobService {
 
     const prevPriority = job.priority;
     if (prevPriority === priority) return job;
+
+    if (this.serverRepo.serverManaged && this.serverRepo.updateAtomic) {
+      return this.serverRepo.updateAtomic(organizationId, jobId, job.version ?? 1, 'priority', priority);
+    }
 
     const nowISO = new Date().toISOString();
     const updatedJob: ProductionJob = {
@@ -587,6 +620,10 @@ export class JobService {
     const prevDeadline = job.deadlineISO;
     if (prevDeadline === deadlineISO) return job;
 
+    if (this.serverRepo.serverManaged && this.serverRepo.updateAtomic) {
+      return this.serverRepo.updateAtomic(organizationId, jobId, job.version ?? 1, 'deadline', deadlineISO);
+    }
+
     const nowISO = new Date().toISOString();
     const updatedJob: ProductionJob = {
       ...job,
@@ -622,6 +659,14 @@ export class JobService {
   ): Promise<ProductionEvent> {
     const job = await this.jobRepo.getById(organizationId, jobId);
     if (!job) throw new Error(`OP ${jobId} não encontrada.`);
+
+    if (this.serverRepo.serverManaged && this.serverRepo.addNoteAtomic) {
+      await this.serverRepo.addNoteAtomic(organizationId, jobId, note);
+      const events = await this.eventRepo.listByJobId(organizationId, jobId);
+      const created = events.find(event => event.eventType === 'NOTE_ADDED' && event.description === note.trim());
+      if (!created) throw new Error('Nota registrada não pôde ser recarregada.');
+      return created;
+    }
 
     const nowISO = new Date().toISOString();
     const event: ProductionEvent = {

@@ -138,6 +138,8 @@ export interface ProductionJob {
   deadlineISO: string;
   createdAt: string;
   updatedAt: string;
+  /** Optimistic concurrency token supplied by PostgreSQL in connected mode. */
+  version?: number;
   dataOrigin: DataOrigin;
 }
 

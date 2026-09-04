@@ -50,6 +50,7 @@ import {
   SupabaseWorkflowStageRepository,
   SupabaseProductionEventRepository,
 } from '../repositories/supabaseProductionRepositories';
+import { createSupabaseInventoryRepositories } from '../repositories/supabaseInventoryRepositories';
 import { LocalStorageMaterialRepository } from '../repositories/localStorageMaterialRepository';
 import { LocalStorageRequirementRepository } from '../repositories/localStorageRequirementRepository';
 import { LocalStorageReservationRepository } from '../repositories/localStorageReservationRepository';
@@ -81,6 +82,7 @@ import {
   AddRequirementInput,
   ReserveRequirementInput,
 } from '../services/inventoryService';
+import { SupabaseInventoryService } from '../services/supabaseInventoryService';
 import {
   ProcurementService,
   CreateSupplierInput,
@@ -406,10 +408,16 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
   const jobRepo = productionRepos.job;
   const stageRepo = productionRepos.stage;
   const eventRepo = productionRepos.event;
-  const materialRepo = useMemo(() => new LocalStorageMaterialRepository(), []);
-  const requirementRepo = useMemo(() => new LocalStorageRequirementRepository(), []);
-  const reservationRepo = useMemo(() => new LocalStorageReservationRepository(), []);
-  const movementRepo = useMemo(() => new LocalStorageMovementRepository(), []);
+  const inventoryRepos = useMemo(() => {
+    if (allowDemoData) return null;
+    const supabase = getSupabaseClient();
+    if (!supabase) throw new Error('Supabase indisponível no modo conectado.');
+    return createSupabaseInventoryRepositories(supabase);
+  }, [allowDemoData]);
+  const materialRepo = useMemo(() => inventoryRepos?.material ?? new LocalStorageMaterialRepository(), [inventoryRepos]);
+  const requirementRepo = useMemo(() => inventoryRepos?.requirement ?? new LocalStorageRequirementRepository(), [inventoryRepos]);
+  const reservationRepo = useMemo(() => inventoryRepos?.reservation ?? new LocalStorageReservationRepository(), [inventoryRepos]);
+  const movementRepo = useMemo(() => inventoryRepos?.movement ?? new LocalStorageMovementRepository(), [inventoryRepos]);
 
   // Repositórios de Compras (Fase 2B)
   const supplierRepo = useMemo(() => new LocalStorageSupplierRepository(), []);
@@ -436,18 +444,20 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
     () => new FinancialService(receivableRepo, receivablePaymentRepo, jobRepo, jobService),
     [receivableRepo, receivablePaymentRepo, jobRepo, jobService]
   );
-  const inventoryService = useMemo(
-    () =>
-      new InventoryService(
+  const inventoryService = useMemo(() => {
+    if (inventoryRepos) return new SupabaseInventoryService(
+      inventoryRepos.core.supabase,
+      materialRepo, requirementRepo, reservationRepo, movementRepo, jobRepo, eventRepo
+    );
+    return new InventoryService(
         materialRepo,
         requirementRepo,
         reservationRepo,
         movementRepo,
         jobRepo,
         eventRepo
-      ),
-    [materialRepo, requirementRepo, reservationRepo, movementRepo, jobRepo, eventRepo]
-  );
+      );
+  }, [inventoryRepos, materialRepo, requirementRepo, reservationRepo, movementRepo, jobRepo, eventRepo]);
   const procurementService = useMemo(
     () =>
       new ProcurementService(
@@ -484,13 +494,13 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
 
   const reloadAll = useCallback(async () => {
     const orgId = organization.id;
-    const rawState = typeof window !== 'undefined' && window.localStorage
+    const rawState = allowDemoData && typeof window !== 'undefined' && window.localStorage
       ? (window.localStorage.getItem(storageKeys.seedState(orgId)) as SeedState | null)
       : null;
-    const rawInvState = typeof window !== 'undefined' && window.localStorage
+    const rawInvState = allowDemoData && typeof window !== 'undefined' && window.localStorage
       ? (window.localStorage.getItem(storageKeys.inventorySeedState(orgId)) as InventorySeedState | null)
       : null;
-    const rawProcState = typeof window !== 'undefined' && window.localStorage
+    const rawProcState = allowDemoData && typeof window !== 'undefined' && window.localStorage
       ? (window.localStorage.getItem(storageKeys.procurementSeedState(orgId)) as ProcurementSeedState | null)
       : null;
 

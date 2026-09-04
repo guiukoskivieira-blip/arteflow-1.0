@@ -1,0 +1,5 @@
+create index arteflow_inventory_requirements_created_by_idx on public.arteflow_inventory_requirements(created_by);
+create index arteflow_inventory_reservations_requirement_idx on public.arteflow_inventory_reservations(organization_id, requirement_id);
+create index arteflow_inventory_reservations_created_by_idx on public.arteflow_inventory_reservations(created_by);
+create index arteflow_inventory_movements_job_idx on public.arteflow_inventory_movements(organization_id, production_job_id) where production_job_id is not null;
+create index arteflow_inventory_movements_reservation_idx on public.arteflow_inventory_movements(organization_id, reservation_id) where reservation_id is not null;

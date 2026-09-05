@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
-import { SupabaseReceivablePaymentRepository, SupabaseReceivableRepository } from '../repositories/supabaseFinancialRepositories';
+import { SupabaseFinancialPayableRepository, SupabaseFinancialSettlementRepository, SupabaseReceivablePaymentRepository, SupabaseReceivableRepository } from '../repositories/supabaseFinancialRepositories';
 
 const migration = readFileSync('supabase/migrations/20260905090000_add_arteflow_multi_tenant_financial.sql', 'utf8');
 
@@ -54,5 +54,14 @@ describe('Financeiro PostgreSQL multi-tenant', () => {
     const eq = vi.fn().mockReturnValue({ not });
     const from = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ eq }) });
     await expect(new SupabaseReceivablePaymentRepository({ from } as any).list('o')).rejects.toThrow(/inseguro/);
+  });
+  it('carrega payables e settlements sempre com filtro do tenant', async () => {
+    const order = vi.fn().mockResolvedValue({ data: [], error: null });
+    const eq = vi.fn().mockReturnValue({ order });
+    const from = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ eq }) });
+    await new SupabaseFinancialPayableRepository({ from } as any).list('org-b');
+    await new SupabaseFinancialSettlementRepository({ from } as any).list('org-b');
+    expect(eq).toHaveBeenNthCalledWith(1, 'organization_id', 'org-b');
+    expect(eq).toHaveBeenNthCalledWith(2, 'organization_id', 'org-b');
   });
 });

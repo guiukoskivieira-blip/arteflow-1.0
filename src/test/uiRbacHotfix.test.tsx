@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InventoryPage } from '../components/pages/InventoryPage';
 import { ProductionListView } from '../components/production/ProductionListView';
@@ -111,6 +111,18 @@ describe('hotfix RBAC visual de Estoque e Produção', () => {
     render(<FinancialPage />);
     expect(screen.getByRole('button', { name: 'Registrar pagamento' })).toBeInTheDocument();
   });
+
+  it('exibe payable e histórico para MEMBER sem expor controles de baixa', async () => {
+    context.value = financialContext(false);
+    render(<FinancialPage />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Contas a pagar' }));
+    expect(screen.getByText('Fornecedor demonstrativo')).toBeInTheDocument();
+    expect(screen.getByText('PC-DEMO-001')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver histórico' }));
+    expect(screen.getByRole('region', { name: 'Histórico de baixas' })).toBeInTheDocument();
+    expect(screen.getByText('Baixa demonstrativa')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Registrar pagamento' })).not.toBeInTheDocument();
+  });
 });
 
 function financialContext(canManage: boolean) {
@@ -124,5 +136,8 @@ function financialContext(canManage: boolean) {
     }],
     financialIndicators: { totalReceivableCents: 10_000, totalReceivedCents: 0, totalOverdueCents: 0, openBalanceCents: 10_000, pendingCount: 1 },
     registerReceivablePayment: vi.fn(),
+    registerPayableSettlement: vi.fn(),
+    payables: [{ id:'payable-1', organizationId:'org-1', purchaseOrderId:'purchase-1', purchaseOrderNumber:'PC-DEMO-001', supplierId:'supplier-1', supplierName:'Fornecedor demonstrativo', description:'Compra demonstrativa', totalCents:5000, paidCents:2000, dueDateISO:'2026-12-10', status:'PARTIAL', createdAt:'2026-01-01', updatedAt:'2026-01-01' }],
+    financialSettlements: [{ id:'settlement-1', organizationId:'org-1', titleType:'PAYABLE', receivableId:null, payableId:'payable-1', amountCents:2000, settledAt:'2026-09-05T12:00:00Z', method:'PIX', notes:'Baixa demonstrativa', idempotencyKey:'demo', createdBy:'owner-1', createdByName:'Usuário demonstrativo', createdAt:'2026-09-05T12:00:00Z' }],
   };
 }

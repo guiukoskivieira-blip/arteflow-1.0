@@ -31,6 +31,50 @@ export interface ReceivablePayment {
   createdAt: string;
 }
 
+export interface FinancialPayable {
+  id: string;
+  organizationId: string;
+  purchaseOrderId: string | null;
+  purchaseOrderNumber: string | null;
+  supplierId: string | null;
+  supplierName: string;
+  description: string;
+  totalCents: number;
+  paidCents: number;
+  dueDateISO: string;
+  status: ReceivableStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FinancialSettlement {
+  id: string;
+  organizationId: string;
+  titleType: 'RECEIVABLE' | 'PAYABLE';
+  receivableId: string | null;
+  payableId: string | null;
+  amountCents: number;
+  settledAt: string;
+  method: PaymentMethod;
+  notes?: string;
+  idempotencyKey: string;
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
+}
+
+export interface IFinancialPayableRepository {
+  list(organizationId: string): Promise<FinancialPayable[]>;
+  getById(organizationId: string, id: string): Promise<FinancialPayable | null>;
+}
+
+export interface IFinancialSettlementRepository {
+  list(organizationId: string): Promise<FinancialSettlement[]>;
+  listByReceivableId(organizationId: string, id: string): Promise<FinancialSettlement[]>;
+  listByPayableId(organizationId: string, id: string): Promise<FinancialSettlement[]>;
+  getByIdempotencyKey(organizationId: string, key: string): Promise<FinancialSettlement | null>;
+}
+
 export interface FinancialIndicators {
   totalReceivableCents: number;
   totalReceivedCents: number;

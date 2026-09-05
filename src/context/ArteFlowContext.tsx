@@ -94,7 +94,7 @@ import {
   RecordGoodsReceiptInput,
 } from '../services/procurementService';
 import { computeProcurementSuggestions } from '../services/procurementSuggestionService';
-import { FinancialIndicators, PaymentMethod, ReceivableAccount, ReceivablePayment } from '../types/financial';
+import { FinancialIndicators, FinancialPayable, FinancialSettlement, PaymentMethod, ReceivableAccount, ReceivablePayment } from '../types/financial';
 import { LocalStorageReceivablePaymentRepository, LocalStorageReceivableRepository } from '../repositories/localStorageFinancialRepositories';
 import { FinancialService } from '../services/financialService';
 import { createSupabaseFinancialRepositories } from '../repositories/supabaseFinancialRepositories';
@@ -150,6 +150,8 @@ interface ArteFlowContextType {
   procurementSuggestions: ProcurementSuggestion[];
   receivables: ReceivableAccount[];
   receivablePayments: ReceivablePayment[];
+  payables: FinancialPayable[];
+  financialSettlements: FinancialSettlement[];
   financialIndicators: FinancialIndicators;
 
   filter: ProductionJobFilter;
@@ -263,6 +265,7 @@ interface ArteFlowContextType {
   getPurchaseRequestItems: (requestId: string) => Promise<PurchaseRequestItem[]>;
   getProcurementEvents: (entityType: string, entityId: string) => Promise<ProcurementEvent[]>;
   registerReceivablePayment: (input: { receivableId: string; amountCents: number; paidAt: string; method: PaymentMethod; notes?: string; idempotencyKey: string }) => Promise<void>;
+  registerPayableSettlement: (input: { payableId: string; amountCents: number; settledAt: string; method: PaymentMethod; notes?: string; idempotencyKey: string }) => Promise<void>;
 
   // Ações de Ambiente
   resetDemoEnvironment: () => Promise<void>;
@@ -353,6 +356,8 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
   const [procurementEvents, setProcurementEvents] = useState<ProcurementEvent[]>([]);
   const [receivables, setReceivables] = useState<ReceivableAccount[]>([]);
   const [receivablePayments, setReceivablePayments] = useState<ReceivablePayment[]>([]);
+  const [payables, setPayables] = useState<FinancialPayable[]>([]);
+  const [financialSettlements, setFinancialSettlements] = useState<FinancialSettlement[]>([]);
 
   const [filter, setFilterState] = useState<ProductionJobFilter>(defaultFilter);
   const [materialFilter, setMaterialFilterState] = useState<MaterialFilter>(defaultMaterialFilter);
@@ -457,7 +462,7 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
     [jobRepo, eventRepo, requirementRepo]
   );
   const financialService = useMemo(() => financialRepos
-    ? new SupabaseFinancialService(financialRepos.receivable.db, receivableRepo, receivablePaymentRepo, jobRepo, jobService)
+    ? new SupabaseFinancialService(financialRepos.receivable.db, receivableRepo, receivablePaymentRepo, jobRepo, jobService, financialRepos.payable, financialRepos.settlement)
     : new FinancialService(receivableRepo, receivablePaymentRepo, jobRepo, jobService),
     [financialRepos, receivableRepo, receivablePaymentRepo, jobRepo, jobService]);
   const inventoryService = useMemo(() => {
@@ -542,6 +547,8 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
     let loadedProcEvents = await procurementEventRepo.listAll(orgId);
     let loadedReceivables = await receivableRepo.list(orgId);
     let loadedReceivablePayments = await receivablePaymentRepo.list(orgId);
+    let loadedPayables = financialRepos ? await financialRepos.payable.list(orgId) : [];
+    let loadedSettlements = financialRepos ? await financialRepos.settlement.list(orgId) : [];
 
     if (!allowDemoData) {
       if (loadedStages.length === 0) {
@@ -677,8 +684,14 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
     setProcurementEvents(loadedProcEvents);
     loadedReceivables = await financialService.ensureAccountsForOrders(orgId, loadedOrders);
     loadedReceivablePayments = await receivablePaymentRepo.list(orgId);
+    if (financialRepos) {
+      loadedPayables = await financialRepos.payable.list(orgId);
+      loadedSettlements = await financialRepos.settlement.list(orgId);
+    }
     setReceivables(loadedReceivables);
     setReceivablePayments(loadedReceivablePayments);
+    setPayables(loadedPayables);
+    setFinancialSettlements(loadedSettlements);
   }, [
     organization.id,
     stageRepo,
@@ -700,6 +713,7 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
     receivableRepo,
     receivablePaymentRepo,
     financialService,
+    financialRepos,
     allowDemoData,
   ]);
 
@@ -1347,6 +1361,16 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
     [financialService, organization.id, currentUser, reloadAll]
   );
 
+  const registerPayableSettlement = useCallback(
+    async (input: { payableId: string; amountCents: number; settledAt: string; method: PaymentMethod; notes?: string; idempotencyKey: string }) => {
+      if (!(financialService instanceof SupabaseFinancialService)) throw new Error('Contas a pagar estão disponíveis apenas no modo conectado.');
+      await financialService.settlePayable(organization.id, input);
+      await reloadAll();
+      setFeedbackNotification({ type: 'success', title: 'Pagamento registrado', message: 'Conta a pagar atualizada pelo servidor.' });
+    },
+    [financialService, organization.id, reloadAll]
+  );
+
   const financialIndicators = useMemo(
     () => financialService.calculateIndicators(receivables),
     [financialService, receivables]
@@ -1449,6 +1473,8 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
         procurementSuggestions,
         receivables,
         receivablePayments,
+        payables,
+        financialSettlements,
         financialIndicators,
 
         filter,
@@ -1558,6 +1584,7 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
         getPurchaseRequestItems,
         getProcurementEvents,
         registerReceivablePayment: guardAction('arteflow.finance.manage', registerReceivablePayment),
+        registerPayableSettlement: guardAction('arteflow.finance.manage', registerPayableSettlement),
 
         resetDemoEnvironment: guardAction('arteflow.settings.manage', resetDemoEnvironment),
         resetToDemoSeed: guardAction('arteflow.settings.manage', resetToDemoSeed),

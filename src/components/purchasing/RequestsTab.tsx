@@ -17,6 +17,7 @@ import {
 
 export const RequestsTab: React.FC = () => {
   const {
+    can = () => true,
     purchaseRequests,
     purchaseRequestItems,
     setIsNewRequestModalOpen,
@@ -24,6 +25,7 @@ export const RequestsTab: React.FC = () => {
     cancelPurchaseRequest,
     setPrefillRequestItem,
   } = useArteFlow();
+  const canManage = can('arteflow.procurement.manage');
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<PurchaseRequestStatus | 'ALL'>('ALL');
@@ -44,16 +46,19 @@ export const RequestsTab: React.FC = () => {
   }, [purchaseRequests, statusFilter, search]);
 
   const handleOpenNewManualRequest = () => {
+    if (!canManage) return;
     setPrefillRequestItem(null);
     setIsNewRequestModalOpen(true);
   };
 
   const handleConvertToOrder = (_req: PurchaseRequest) => {
+    if (!canManage) return;
     // Abre modal de Novo Pedido de Compra
     setIsNewPurchaseOrderModalOpen(true);
   };
 
   const handleConfirmCancel = async () => {
+    if (!canManage) return;
     if (!cancellingRequestId || !cancelReason.trim()) return;
     try {
       await cancelPurchaseRequest(cancellingRequestId, cancelReason);
@@ -115,14 +120,14 @@ export const RequestsTab: React.FC = () => {
           </select>
         </div>
 
-        <button
+        {canManage && <button
           type="button"
           onClick={handleOpenNewManualRequest}
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-colors shadow-xs"
         >
           <Plus className="w-4 h-4" />
           Nova Solicitação de Compra
-        </button>
+        </button>}
       </div>
 
       {/* Tabela de Solicitações */}
@@ -133,14 +138,14 @@ export const RequestsTab: React.FC = () => {
           <p className="text-xs text-slate-500 max-w-sm mx-auto mb-5">
             Gere solicitações a partir da aba de Necessidades ou crie uma solicitação avulsa manualmente.
           </p>
-          <button
+          {canManage && <button
             type="button"
             onClick={handleOpenNewManualRequest}
             className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold transition-colors"
           >
             <Plus className="w-4 h-4" />
             Criar Primeira Solicitação
-          </button>
+          </button>}
         </div>
       ) : (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
@@ -204,7 +209,7 @@ export const RequestsTab: React.FC = () => {
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-2">
-                          {req.status === 'REQUESTED' && (
+                          {canManage && req.status === 'REQUESTED' && (
                             <>
                               <button
                                 type="button"

@@ -25,6 +25,7 @@ interface ItemReceiptState {
 
 export const RecordReceiptModal: React.FC = () => {
   const {
+    can = () => true,
     isRecordReceiptModalOpen,
     setIsRecordReceiptModalOpen,
     selectedPurchaseOrder,
@@ -85,7 +86,7 @@ export const RecordReceiptModal: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isRecordReceiptModalOpen, setIsRecordReceiptModalOpen]);
 
-  if (!isRecordReceiptModalOpen || !selectedPurchaseOrder || selectedPurchaseOrder.status === 'RECEIVED') return null;
+  if (!isRecordReceiptModalOpen || !selectedPurchaseOrder || selectedPurchaseOrder.status === 'RECEIVED' || !can('arteflow.procurement.manage')) return null;
 
   const handleQtyChange = (idx: number, val: string) => {
     setItemsState((prev) => {

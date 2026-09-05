@@ -83,6 +83,8 @@ import {
   ReserveRequirementInput,
 } from '../services/inventoryService';
 import { SupabaseInventoryService } from '../services/supabaseInventoryService';
+import { createSupabaseProcurementRepositories } from '../repositories/supabaseProcurementRepositories';
+import { SupabaseProcurementService } from '../services/supabaseProcurementService';
 import {
   ProcurementService,
   CreateSupplierInput,
@@ -420,16 +422,21 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
   const reservationRepo = useMemo(() => inventoryRepos?.reservation ?? new LocalStorageReservationRepository(), [inventoryRepos]);
   const movementRepo = useMemo(() => inventoryRepos?.movement ?? new LocalStorageMovementRepository(), [inventoryRepos]);
 
-  // Repositórios de Compras (Fase 2B)
-  const supplierRepo = useMemo(() => new LocalStorageSupplierRepository(), []);
-  const requestRepo = useMemo(() => new LocalStoragePurchaseRequestRepository(), []);
-  const requestItemRepo = useMemo(() => new LocalStoragePurchaseRequestItemRepository(), []);
-  const purchaseOrderRepo = useMemo(() => new LocalStoragePurchaseOrderRepository(), []);
-  const purchaseOrderItemRepo = useMemo(() => new LocalStoragePurchaseOrderItemRepository(), []);
-  const goodsReceiptRepo = useMemo(() => new LocalStorageGoodsReceiptRepository(), []);
-  const goodsReceiptItemRepo = useMemo(() => new LocalStorageGoodsReceiptItemRepository(), []);
-  const procurementEventRepo = useMemo(() => new LocalStorageProcurementEventRepository(), []);
-  const procurementSequenceRepo = useMemo(() => new LocalStorageProcurementSequenceRepository(), []);
+  const procurementRepos = useMemo(() => {
+    if (allowDemoData) return null;
+    const supabase = getSupabaseClient();
+    if (!supabase) throw new Error('Supabase indisponível no modo conectado.');
+    return createSupabaseProcurementRepositories(supabase);
+  }, [allowDemoData]);
+  const supplierRepo = useMemo(() => procurementRepos?.supplier ?? new LocalStorageSupplierRepository(), [procurementRepos]);
+  const requestRepo = useMemo(() => procurementRepos?.request ?? new LocalStoragePurchaseRequestRepository(), [procurementRepos]);
+  const requestItemRepo = useMemo(() => procurementRepos?.requestItem ?? new LocalStoragePurchaseRequestItemRepository(), [procurementRepos]);
+  const purchaseOrderRepo = useMemo(() => procurementRepos?.order ?? new LocalStoragePurchaseOrderRepository(), [procurementRepos]);
+  const purchaseOrderItemRepo = useMemo(() => procurementRepos?.orderItem ?? new LocalStoragePurchaseOrderItemRepository(), [procurementRepos]);
+  const goodsReceiptRepo = useMemo(() => procurementRepos?.receipt ?? new LocalStorageGoodsReceiptRepository(), [procurementRepos]);
+  const goodsReceiptItemRepo = useMemo(() => procurementRepos?.receiptItem ?? new LocalStorageGoodsReceiptItemRepository(), [procurementRepos]);
+  const procurementEventRepo = useMemo(() => procurementRepos?.event ?? new LocalStorageProcurementEventRepository(), [procurementRepos]);
+  const procurementSequenceRepo = useMemo(() => procurementRepos?.sequence ?? new LocalStorageProcurementSequenceRepository(), [procurementRepos]);
   const receivableRepo = useMemo(() => new LocalStorageReceivableRepository(), []);
   const receivablePaymentRepo = useMemo(() => new LocalStorageReceivablePaymentRepository(), []);
 
@@ -459,9 +466,8 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
         eventRepo
       );
   }, [inventoryRepos, materialRepo, requirementRepo, reservationRepo, movementRepo, jobRepo, eventRepo]);
-  const procurementService = useMemo(
-    () =>
-      new ProcurementService(
+  const procurementService = useMemo(() => {
+    const args = [
         supplierRepo,
         requestRepo,
         requestItemRepo,
@@ -473,7 +479,10 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
         procurementSequenceRepo,
         materialRepo,
         inventoryService
-      ),
+      ] as const;
+    if (procurementRepos) return new SupabaseProcurementService(procurementRepos.supplier.db, ...args);
+    return new ProcurementService(...args);
+  },
     [
       supplierRepo,
       requestRepo,
@@ -486,6 +495,7 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
       procurementSequenceRepo,
       materialRepo,
       inventoryService,
+      procurementRepos,
     ]
   );
 

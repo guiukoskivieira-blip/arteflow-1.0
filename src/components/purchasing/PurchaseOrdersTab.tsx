@@ -20,6 +20,7 @@ import { formatMoneyFromCents } from '../../domain/money';
 
 export const PurchaseOrdersTab: React.FC = () => {
   const {
+    can = () => true,
     purchaseOrders,
     purchaseOrderItems,
     setSelectedPurchaseOrder,
@@ -29,6 +30,7 @@ export const PurchaseOrdersTab: React.FC = () => {
     issuePurchaseOrder,
     cancelPurchaseOrder,
   } = useArteFlow();
+  const canManage = can('arteflow.procurement.manage');
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<PurchaseOrderStatus | 'ALL'>('ALL');
@@ -107,14 +109,14 @@ export const PurchaseOrdersTab: React.FC = () => {
           </select>
         </div>
 
-        <button
+        {canManage && <button
           type="button"
           onClick={() => setIsNewPurchaseOrderModalOpen(true)}
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-colors shadow-xs"
         >
           <Plus className="w-4 h-4" />
           Novo Pedido de Compra
-        </button>
+        </button>}
       </div>
 
       {/* Tabela de Pedidos */}
@@ -125,14 +127,14 @@ export const PurchaseOrdersTab: React.FC = () => {
           <p className="text-xs text-slate-500 max-w-sm mx-auto mb-5">
             Crie pedidos de compra a partir de solicitações abertas ou diretamente para um fornecedor homologado.
           </p>
-          <button
+          {canManage && <button
             type="button"
             onClick={() => setIsNewPurchaseOrderModalOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold transition-colors"
           >
             <Plus className="w-4 h-4" />
             Criar Primeiro Pedido
-          </button>
+          </button>}
         </div>
       ) : (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
@@ -223,7 +225,7 @@ export const PurchaseOrdersTab: React.FC = () => {
                             <Eye className="w-4 h-4" />
                           </button>
 
-                          {po.status === 'DRAFT' && (
+                          {canManage && po.status === 'DRAFT' && (
                             <>
                               <button
                                 type="button"
@@ -246,7 +248,7 @@ export const PurchaseOrdersTab: React.FC = () => {
                             </>
                           )}
 
-                          {(po.status === 'ISSUED' || po.status === 'PARTIALLY_RECEIVED') && (
+                          {canManage && (po.status === 'ISSUED' || po.status === 'PARTIALLY_RECEIVED') && (
                             <>
                               <button
                                 type="button"

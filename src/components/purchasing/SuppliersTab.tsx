@@ -15,12 +15,14 @@ import {
 
 export const SuppliersTab: React.FC = () => {
   const {
+    can = () => true,
     suppliers,
     setSelectedSupplier,
     setIsNewSupplierModalOpen,
     setIsEditSupplierModalOpen,
     toggleSupplierActive,
   } = useArteFlow();
+  const canManage = can('arteflow.procurement.manage');
 
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
@@ -46,11 +48,13 @@ export const SuppliersTab: React.FC = () => {
   }, [suppliers, activeFilter, search]);
 
   const handleEdit = (supplier: Supplier) => {
+    if (!canManage) return;
     setSelectedSupplier(supplier);
     setIsEditSupplierModalOpen(true);
   };
 
   const handleToggle = async (supplierId: string) => {
+    if (!canManage) return;
     try {
       await toggleSupplierActive(supplierId);
     } catch {
@@ -85,14 +89,14 @@ export const SuppliersTab: React.FC = () => {
           </select>
         </div>
 
-        <button
+        {canManage && <button
           type="button"
           onClick={() => setIsNewSupplierModalOpen(true)}
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-colors shadow-xs"
         >
           <Plus className="w-4 h-4" />
           Novo Fornecedor
-        </button>
+        </button>}
       </div>
 
       {/* Tabela de Fornecedores */}
@@ -103,14 +107,14 @@ export const SuppliersTab: React.FC = () => {
           <p className="text-xs text-slate-500 max-w-sm mx-auto mb-5">
             Cadastre os parceiros e distribuidores homologados para fornecimento de papéis, lonas, chapas e insumos.
           </p>
-          <button
+          {canManage && <button
             type="button"
             onClick={() => setIsNewSupplierModalOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold transition-colors"
           >
             <Plus className="w-4 h-4" />
             Cadastrar Primeiro Fornecedor
-          </button>
+          </button>}
         </div>
       ) : (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
@@ -181,7 +185,7 @@ export const SuppliersTab: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-2">
+                      {canManage && <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
                           onClick={() => handleEdit(sup)}
@@ -203,7 +207,7 @@ export const SuppliersTab: React.FC = () => {
                         >
                           <Power className="w-4 h-4" />
                         </button>
-                      </div>
+                      </div>}
                     </td>
                   </tr>
                 ))}

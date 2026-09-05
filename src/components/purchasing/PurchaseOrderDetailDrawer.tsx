@@ -21,6 +21,7 @@ import { formatMoneyFromCents } from '../../domain/money';
 
 export const PurchaseOrderDetailDrawer: React.FC = () => {
   const {
+    can = () => true,
     isPurchaseOrderDetailDrawerOpen,
     setIsPurchaseOrderDetailDrawerOpen,
     selectedPurchaseOrder,
@@ -31,6 +32,7 @@ export const PurchaseOrderDetailDrawer: React.FC = () => {
     cancelPurchaseOrder,
     setIsRecordReceiptModalOpen,
   } = useArteFlow();
+  const canManage = can('arteflow.procurement.manage');
 
   const [items, setItems] = useState<PurchaseOrderItem[]>([]);
   const [receipts, setReceipts] = useState<GoodsReceipt[]>([]);
@@ -75,6 +77,7 @@ export const PurchaseOrderDetailDrawer: React.FC = () => {
   const canCancel = (po.status === 'DRAFT' || po.status === 'ISSUED') && receipts.length === 0;
 
   const handleIssue = async () => {
+    if (!canManage) return;
     try {
       await issuePurchaseOrder(po.id);
       setIsPurchaseOrderDetailDrawerOpen(false);
@@ -84,6 +87,7 @@ export const PurchaseOrderDetailDrawer: React.FC = () => {
   };
 
   const handleConfirmCancel = async () => {
+    if (!canManage) return;
     if (!cancelReason.trim()) return;
     try {
       await cancelPurchaseOrder(po.id, cancelReason);
@@ -94,6 +98,7 @@ export const PurchaseOrderDetailDrawer: React.FC = () => {
   };
 
   const handleOpenReceiptModal = () => {
+    if (!canManage) return;
     setIsRecordReceiptModalOpen(true);
   };
 
@@ -380,7 +385,7 @@ export const PurchaseOrderDetailDrawer: React.FC = () => {
         </div>
 
         {/* Footer com Ações */}
-        <div className="p-6 border-t border-slate-200 bg-slate-50 flex items-center justify-between gap-3">
+        {canManage && <div className="p-6 border-t border-slate-200 bg-slate-50 flex items-center justify-between gap-3">
           <div>
             {canCancel && !isCancelling && (
               <button
@@ -416,10 +421,10 @@ export const PurchaseOrderDetailDrawer: React.FC = () => {
               </button>
             )}
           </div>
-        </div>
+        </div>}
 
         {/* Diálogo de Cancelamento Inline */}
-        {isCancelling && (
+        {canManage && isCancelling && (
           <div className="p-6 border-t border-red-200 bg-red-50/50 space-y-3">
             <h4 className="text-xs font-bold text-red-900">Motivo do Cancelamento do Pedido</h4>
             <textarea

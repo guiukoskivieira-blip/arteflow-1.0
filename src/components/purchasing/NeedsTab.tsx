@@ -13,6 +13,7 @@ import {
 
 export const NeedsTab: React.FC = () => {
   const {
+    can = () => true,
     procurementSuggestions,
     setIsNewRequestModalOpen,
     setPrefillRequestItem,
@@ -20,8 +21,10 @@ export const NeedsTab: React.FC = () => {
     setSelectedJob,
     jobs,
   } = useArteFlow();
+  const canManage = can('arteflow.procurement.manage');
 
   const handleCreateRequestFromSuggestion = (sug: ProcurementSuggestion) => {
+    if (!canManage) return;
     setPrefillRequestItem({
       materialId: sug.materialId,
       requestedQuantityMilli: sug.suggestedQuantityMilli,
@@ -175,14 +178,14 @@ export const NeedsTab: React.FC = () => {
                 </div>
 
                 {/* Ação */}
-                <button
+                {canManage && <button
                   type="button"
                   onClick={() => handleCreateRequestFromSuggestion(sug)}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs transition-colors shadow-xs"
                 >
                   <FilePlus className="w-4 h-4" />
                   Gerar Solicitação de Compra
-                </button>
+                </button>}
               </div>
             );
           })}

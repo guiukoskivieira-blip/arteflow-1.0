@@ -11,6 +11,7 @@ interface RequestItemRow {
 
 export const NewRequestModal: React.FC = () => {
   const {
+    can = () => true,
     isNewRequestModalOpen,
     setIsNewRequestModalOpen,
     prefillRequestItem,
@@ -72,7 +73,7 @@ export const NewRequestModal: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isNewRequestModalOpen, setIsNewRequestModalOpen, setPrefillRequestItem]);
 
-  if (!isNewRequestModalOpen) return null;
+  if (!isNewRequestModalOpen || !can('arteflow.procurement.manage')) return null;
 
   const handleAddItemRow = () => {
     setItems((prev) => [

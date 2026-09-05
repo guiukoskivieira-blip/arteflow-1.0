@@ -3,7 +3,7 @@ import { useArteFlow } from '../../context/ArteFlowContext';
 import { X, Building2, AlertCircle } from 'lucide-react';
 
 export const NewSupplierModal: React.FC = () => {
-  const { isNewSupplierModalOpen, setIsNewSupplierModalOpen, createSupplier, suppliers } = useArteFlow();
+  const { can = () => true, isNewSupplierModalOpen, setIsNewSupplierModalOpen, createSupplier, suppliers } = useArteFlow();
 
   const [code, setCode] = useState('');
   const [tradeName, setTradeName] = useState('');
@@ -55,7 +55,7 @@ export const NewSupplierModal: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isNewSupplierModalOpen, setIsNewSupplierModalOpen]);
 
-  if (!isNewSupplierModalOpen) return null;
+  if (!isNewSupplierModalOpen || !can('arteflow.procurement.manage')) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -4,6 +4,7 @@ import { X, Building2, AlertCircle } from 'lucide-react';
 
 export const EditSupplierModal: React.FC = () => {
   const {
+    can = () => true,
     isEditSupplierModalOpen,
     setIsEditSupplierModalOpen,
     selectedSupplier,
@@ -51,7 +52,7 @@ export const EditSupplierModal: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isEditSupplierModalOpen, setIsEditSupplierModalOpen]);
 
-  if (!isEditSupplierModalOpen || !selectedSupplier) return null;
+  if (!isEditSupplierModalOpen || !selectedSupplier || !can('arteflow.procurement.manage')) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

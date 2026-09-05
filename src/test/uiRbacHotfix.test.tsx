@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InventoryPage } from '../components/pages/InventoryPage';
 import { ProductionListView } from '../components/production/ProductionListView';
+import { SuppliersTab } from '../components/purchasing/SuppliersTab';
 
 const context = vi.hoisted(() => ({ value: {} as any }));
 
@@ -68,5 +69,32 @@ describe('hotfix RBAC visual de Estoque e Produção', () => {
     expect(screen.queryByTitle('Voltar etapa')).not.toBeInTheDocument();
     expect(screen.queryByTitle('Avançar etapa')).not.toBeInTheDocument();
     expect(screen.getByTitle('Ver detalhes')).toBeInTheDocument();
+  });
+
+  it('mantém fornecedores visíveis e remove todas as mutações de Compras para MEMBER', () => {
+    context.value = {
+      can: () => false,
+      suppliers: [{ id: 'supplier-1', code: 'FOR-001', tradeName: 'Fornecedor demonstrativo', isActive: true }],
+      setSelectedSupplier: vi.fn(), setIsNewSupplierModalOpen: vi.fn(), setIsEditSupplierModalOpen: vi.fn(),
+      toggleSupplierActive: vi.fn(),
+    };
+    render(<SuppliersTab />);
+    expect(screen.getByText('Fornecedor demonstrativo')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Novo Fornecedor' })).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Editar fornecedor')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Desativar fornecedor')).not.toBeInTheDocument();
+  });
+
+  it('preserva mutações de Compras para OWNER com procurement.manage', () => {
+    context.value = {
+      can: (permission: string) => permission === 'arteflow.procurement.manage',
+      suppliers: [{ id: 'supplier-1', code: 'FOR-001', tradeName: 'Fornecedor demonstrativo', isActive: true }],
+      setSelectedSupplier: vi.fn(), setIsNewSupplierModalOpen: vi.fn(), setIsEditSupplierModalOpen: vi.fn(),
+      toggleSupplierActive: vi.fn(),
+    };
+    render(<SuppliersTab />);
+    expect(screen.getByRole('button', { name: 'Novo Fornecedor' })).toBeInTheDocument();
+    expect(screen.getByTitle('Editar fornecedor')).toBeInTheDocument();
+    expect(screen.getByTitle('Desativar fornecedor')).toBeInTheDocument();
   });
 });

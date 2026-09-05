@@ -21,6 +21,7 @@ interface OrderItemRow {
 
 export const NewPurchaseOrderModal: React.FC = () => {
   const {
+    can = () => true,
     isNewPurchaseOrderModalOpen,
     setIsNewPurchaseOrderModalOpen,
     suppliers,
@@ -102,7 +103,7 @@ export const NewPurchaseOrderModal: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isNewPurchaseOrderModalOpen, setIsNewPurchaseOrderModalOpen]);
 
-  if (!isNewPurchaseOrderModalOpen) return null;
+  if (!isNewPurchaseOrderModalOpen || !can('arteflow.procurement.manage')) return null;
 
   // Alterna solicitação de compra selecionada para importar itens
   const handleToggleRequest = (reqId: string) => {

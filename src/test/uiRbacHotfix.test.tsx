@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InventoryPage } from '../components/pages/InventoryPage';
 import { ProductionListView } from '../components/production/ProductionListView';
 import { SuppliersTab } from '../components/purchasing/SuppliersTab';
+import { FinancialPage } from '../components/pages/FinancialPage';
 
 const context = vi.hoisted(() => ({ value: {} as any }));
 
@@ -97,4 +98,31 @@ describe('hotfix RBAC visual de Estoque e Produção', () => {
     expect(screen.getByTitle('Editar fornecedor')).toBeInTheDocument();
     expect(screen.getByTitle('Desativar fornecedor')).toBeInTheDocument();
   });
+
+  it('mantém títulos visíveis e oculta baixas do Financeiro para MEMBER view-only', () => {
+    context.value = financialContext(false);
+    render(<FinancialPage />);
+    expect(screen.getByText('Cliente demonstrativo')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Registrar pagamento' })).not.toBeInTheDocument();
+  });
+
+  it('preserva a baixa do Financeiro para OWNER com finance.manage', () => {
+    context.value = financialContext(true);
+    render(<FinancialPage />);
+    expect(screen.getByRole('button', { name: 'Registrar pagamento' })).toBeInTheDocument();
+  });
 });
+
+function financialContext(canManage: boolean) {
+  return {
+    can: (permission: string) => permission === 'arteflow.finance.manage' && canManage,
+    receivables: [{
+      id: 'receivable-1', organizationId: 'org-1', orderId: 'order-1', orderNumber: 'PED-DEMO-001',
+      customerId: 'customer-1', customerName: 'Cliente demonstrativo', totalCents: 10_000,
+      receivedCents: 0, dueDateISO: '2026-12-01', status: 'PENDING',
+      createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
+    }],
+    financialIndicators: { totalReceivableCents: 10_000, totalReceivedCents: 0, totalOverdueCents: 0, openBalanceCents: 10_000, pendingCount: 1 },
+    registerReceivablePayment: vi.fn(),
+  };
+}

@@ -97,6 +97,8 @@ import { computeProcurementSuggestions } from '../services/procurementSuggestion
 import { FinancialIndicators, PaymentMethod, ReceivableAccount, ReceivablePayment } from '../types/financial';
 import { LocalStorageReceivablePaymentRepository, LocalStorageReceivableRepository } from '../repositories/localStorageFinancialRepositories';
 import { FinancialService } from '../services/financialService';
+import { createSupabaseFinancialRepositories } from '../repositories/supabaseFinancialRepositories';
+import { SupabaseFinancialService } from '../services/supabaseFinancialService';
 import { useOptionalAuth } from './AuthContext';
 import type { ArteFlowPermission } from '../auth/permissions';
 
@@ -437,8 +439,14 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
   const goodsReceiptItemRepo = useMemo(() => procurementRepos?.receiptItem ?? new LocalStorageGoodsReceiptItemRepository(), [procurementRepos]);
   const procurementEventRepo = useMemo(() => procurementRepos?.event ?? new LocalStorageProcurementEventRepository(), [procurementRepos]);
   const procurementSequenceRepo = useMemo(() => procurementRepos?.sequence ?? new LocalStorageProcurementSequenceRepository(), [procurementRepos]);
-  const receivableRepo = useMemo(() => new LocalStorageReceivableRepository(), []);
-  const receivablePaymentRepo = useMemo(() => new LocalStorageReceivablePaymentRepository(), []);
+  const financialRepos = useMemo(() => {
+    if (allowDemoData) return null;
+    const supabase = getSupabaseClient();
+    if (!supabase) throw new Error('Supabase indisponível no modo conectado.');
+    return createSupabaseFinancialRepositories(supabase);
+  }, [allowDemoData]);
+  const receivableRepo = useMemo(() => financialRepos?.receivable ?? new LocalStorageReceivableRepository(), [financialRepos]);
+  const receivablePaymentRepo = useMemo(() => financialRepos?.payment ?? new LocalStorageReceivablePaymentRepository(), [financialRepos]);
 
   const orderService = useMemo(
     () => new OrderService(orderRepo, jobRepo, eventRepo),
@@ -448,10 +456,10 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
     () => new JobService(jobRepo, eventRepo, requirementRepo),
     [jobRepo, eventRepo, requirementRepo]
   );
-  const financialService = useMemo(
-    () => new FinancialService(receivableRepo, receivablePaymentRepo, jobRepo, jobService),
-    [receivableRepo, receivablePaymentRepo, jobRepo, jobService]
-  );
+  const financialService = useMemo(() => financialRepos
+    ? new SupabaseFinancialService(financialRepos.receivable.db, receivableRepo, receivablePaymentRepo, jobRepo, jobService)
+    : new FinancialService(receivableRepo, receivablePaymentRepo, jobRepo, jobService),
+    [financialRepos, receivableRepo, receivablePaymentRepo, jobRepo, jobService]);
   const inventoryService = useMemo(() => {
     if (inventoryRepos) return new SupabaseInventoryService(
       inventoryRepos.core.supabase,

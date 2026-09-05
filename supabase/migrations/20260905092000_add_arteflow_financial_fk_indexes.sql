@@ -1,0 +1,5 @@
+create index arteflow_fin_recv_created_by_idx on public.arteflow_financial_receivables(created_by);
+create index arteflow_fin_pay_supplier_idx on public.arteflow_financial_payables(organization_id, supplier_id);
+create index arteflow_fin_pay_created_by_idx on public.arteflow_financial_payables(created_by);
+create index arteflow_fin_set_created_by_idx on public.arteflow_financial_settlements(created_by);
+create index arteflow_fin_events_actor_idx on public.arteflow_financial_events(actor_user_id);

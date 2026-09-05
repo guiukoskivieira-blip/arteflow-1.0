@@ -318,11 +318,15 @@ export const PurchaseOrderDetailDrawer: React.FC = () => {
                 </div>
               </div>
 
-              {/* Aviso Financeiro Honesto */}
+              {/* Integração financeira */}
               <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-xl flex items-start gap-3 text-xs text-amber-900">
-            <InfoIcon className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+                <InfoIcon className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-semibold">Módulo Financeiro Desacoplado:</span> O vínculo deste pedido de compra com Contas a Pagar será implementado no módulo Financeiro.
+                  {po.issuedAt ? (
+                    <><span className="font-semibold">Conta a pagar gerada:</span> consulte e liquide o título correspondente no Financeiro.</>
+                  ) : (
+                    <><span className="font-semibold">Integração financeira:</span> ao emitir este pedido, uma conta a pagar será gerada no Financeiro.</>
+                  )}
                 </div>
               </div>
             </div>

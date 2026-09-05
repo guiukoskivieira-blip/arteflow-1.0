@@ -275,6 +275,10 @@ describe('Procurement UI & Service Integration (Fase 2B.3A)', () => {
     fireEvent.click(newOrderBtn);
 
     expect(screen.getByRole('heading', { name: 'Novo Pedido de Compra' })).toBeInTheDocument();
+    expect(
+      screen.getByText('Ao emitir este pedido de compra, uma conta a pagar será gerada no Financeiro.')
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/contas a pagar será implementado/i)).not.toBeInTheDocument();
 
     const selects = screen.getAllByRole('combobox');
     fireEvent.change(selects[1], { target: { value: appCtx.suppliers[0].id } });
@@ -296,6 +300,11 @@ describe('Procurement UI & Service Integration (Fase 2B.3A)', () => {
     const viewButtons = screen.getAllByTitle(/ver detalhes do pedido/i);
     fireEvent.click(viewButtons[0]);
 
+    expect(
+      screen.getByText(/ao emitir este pedido, uma conta a pagar será gerada no Financeiro/i)
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/contas a pagar será implementado/i)).not.toBeInTheDocument();
+
     // Emitir Pedido via Drawer
     await waitFor(() => {
       const issueBtn = screen.getByRole('button', { name: /emitir pedido de compra/i });
@@ -305,6 +314,14 @@ describe('Procurement UI & Service Integration (Fase 2B.3A)', () => {
 
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    const issuedViewButton = screen.getAllByTitle(/ver detalhes do pedido/i)[0];
+    fireEvent.click(issuedViewButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/conta a pagar gerada:/i)).toBeInTheDocument();
+      expect(screen.queryByText(/será implementado/i)).not.toBeInTheDocument();
     });
   });
 

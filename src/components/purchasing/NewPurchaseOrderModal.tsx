@@ -482,11 +482,11 @@ export const NewPurchaseOrderModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Aviso Financeiro Honesto */}
+          {/* Integração financeira */}
           <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-900">
             <Info className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
             <span>
-              O vínculo deste pedido de compra com Contas a Pagar será implementado no módulo Financeiro.
+              Ao emitir este pedido de compra, uma conta a pagar será gerada no Financeiro.
             </span>
           </div>
 

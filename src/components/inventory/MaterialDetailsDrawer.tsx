@@ -19,6 +19,7 @@ import {
 
 export const MaterialDetailsDrawer: React.FC = () => {
   const {
+    can = () => true,
     selectedMaterial,
     isMaterialDrawerOpen,
     setIsMaterialDrawerOpen,
@@ -31,6 +32,7 @@ export const MaterialDetailsDrawer: React.FC = () => {
     setIsStockAdjustmentModalOpen,
     setAdjustmentTargetMaterial,
   } = useArteFlow();
+  const canManageInventory = can('arteflow.inventory.manage');
 
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [reservations, setReservations] = useState<StockReservation[]>([]);
@@ -87,17 +89,20 @@ export const MaterialDetailsDrawer: React.FC = () => {
   const activeReservations = reservations.filter((r) => r.status === 'ACTIVE');
 
   const handleToggleActive = async () => {
+    if (!canManageInventory) return;
     await updateMaterial(selectedMaterial.id, {
       isActive: !selectedMaterial.isActive,
     });
   };
 
   const handleOpenReceipt = () => {
+    if (!canManageInventory) return;
     setReceiptTargetMaterial(selectedMaterial);
     setIsReceiptModalOpen(true);
   };
 
   const handleOpenAdjustment = () => {
+    if (!canManageInventory) return;
     setAdjustmentTargetMaterial(selectedMaterial);
     setIsStockAdjustmentModalOpen(true);
   };
@@ -158,7 +163,7 @@ export const MaterialDetailsDrawer: React.FC = () => {
         </div>
 
         {/* Action bar */}
-        <div className="px-6 py-2.5 bg-white border-b border-slate-200 flex items-center justify-between flex-wrap gap-2 flex-shrink-0">
+        {canManageInventory && <div className="px-6 py-2.5 bg-white border-b border-slate-200 flex items-center justify-between flex-wrap gap-2 flex-shrink-0">
           <div className="flex items-center gap-2">
             <button
               onClick={handleOpenReceipt}
@@ -187,7 +192,7 @@ export const MaterialDetailsDrawer: React.FC = () => {
             <Power className="w-3.5 h-3.5" />
             <span>{selectedMaterial.isActive ? 'Desativar Material' : 'Ativar Material'}</span>
           </button>
-        </div>
+        </div>}
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">

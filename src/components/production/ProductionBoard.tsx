@@ -21,7 +21,8 @@ import { ProductionJob } from '../../types/domain';
 import { Layers } from 'lucide-react';
 
 export const ProductionBoard: React.FC = () => {
-  const { stages, jobs, filter, transitionProductionJobStage } = useArteFlow();
+  const { stages, jobs, filter, transitionProductionJobStage, can = () => true } = useArteFlow();
+  const canManageProduction = can('arteflow.production.manage');
   const [activeJob, setActiveJob] = useState<ProductionJob | null>(null);
   const [announcement, setAnnouncement] = useState<string>('');
   const [reversionTarget, setReversionTarget] = useState<{
@@ -76,13 +77,14 @@ export const ProductionBoard: React.FC = () => {
 
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
+      if (!canManageProduction) return;
       const job = jobs.find((j) => j.id === event.active.id);
       if (job) {
         setActiveJob(job);
         setAnnouncement(`OP ${job.jobCode} selecionada para movimentação.`);
       }
     },
-    [jobs]
+    [jobs, canManageProduction]
   );
 
   const handleDragOver = useCallback(
@@ -99,6 +101,7 @@ export const ProductionBoard: React.FC = () => {
 
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
+      if (!canManageProduction) return;
       const { active, over } = event;
       setActiveJob(null);
 
@@ -144,7 +147,7 @@ export const ProductionBoard: React.FC = () => {
         setAnnouncement(msg.startsWith('Movimentação bloqueada') ? msg : `Movimentação bloqueada: ${msg}`);
       }
     },
-    [jobs, stages, sortedStages, transitionProductionJobStage]
+    [jobs, stages, sortedStages, transitionProductionJobStage, canManageProduction]
   );
 
   const handleDragCancel = useCallback(() => {

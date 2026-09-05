@@ -28,6 +28,7 @@ export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({
   onRequestReversionReason,
 }) => {
   const {
+    can = () => true,
     stages,
     moveJobNext,
     moveJobPrev,
@@ -35,11 +36,12 @@ export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({
     setIsJobDrawerOpen,
     canJobTransitionTo,
   } = useArteFlow();
+  const canManageProduction = can('arteflow.production.manage');
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: job.id,
     data: { job },
-    disabled: isOverlay,
+    disabled: isOverlay || !canManageProduction,
   });
 
   const sortedStages = [...stages].sort((a, b) => a.sequence - b.sequence);
@@ -63,6 +65,7 @@ export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({
 
   const handlePrevStage = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!canManageProduction) return;
     if (isFirstStage) return;
 
     if (currentStage?.id === 'stage-delivered') {
@@ -78,6 +81,7 @@ export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({
 
   const handleNextStage = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!canManageProduction) return;
     if (isLastStage) return;
     moveJobNext(job.id);
   };
@@ -102,7 +106,7 @@ export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({
       <div className="flex items-center justify-between gap-1.5 flex-wrap">
         <div className="flex items-center gap-1.5">
           {/* Alça de Arraste (Drag Handle) com Suporte a Mouse, Toque e Teclado */}
-          {!isOverlay && (
+          {!isOverlay && canManageProduction && (
             <button
               type="button"
               {...attributes}
@@ -205,8 +209,8 @@ export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({
       </div>
 
       {/* Action Footer: Stage advance/back accessible buttons */}
-      <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1">
-        <button
+      <div className="pt-2 border-t border-slate-100 flex items-center justify-center gap-1">
+        {canManageProduction && <button
           type="button"
           onClick={handlePrevStage}
           disabled={isFirstStage}
@@ -219,7 +223,7 @@ export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({
         >
           <ChevronLeft className="w-3.5 h-3.5" />
           <span>Voltar</span>
-        </button>
+        </button>}
 
         <button
           type="button"
@@ -233,7 +237,7 @@ export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({
           <Eye className="w-3.5 h-3.5" />
         </button>
 
-        <button
+        {canManageProduction && <button
           type="button"
           onClick={handleNextStage}
           disabled={isLastStage || !nextTransitionCheck.allowed}
@@ -254,7 +258,7 @@ export const ProductionJobCard: React.FC<ProductionJobCardProps> = ({
         >
           <span>Avançar</span>
           <ChevronRight className="w-3.5 h-3.5" />
-        </button>
+        </button>}
       </div>
     </div>
   );

@@ -123,6 +123,7 @@ export interface PrefillRequestItemData {
 }
 
 interface ArteFlowContextType {
+  can: (permission: ArteFlowPermission) => boolean;
   organization: Organization;
   currentUser: User;
   setCurrentUser: (user: User) => void;
@@ -1407,6 +1408,7 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
   return (
     <ArteFlowContext.Provider
       value={{
+        can,
         organization,
         currentUser,
         setCurrentUser,

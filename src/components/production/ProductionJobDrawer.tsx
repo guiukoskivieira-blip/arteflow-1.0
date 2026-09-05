@@ -35,6 +35,7 @@ import {
 
 export const ProductionJobDrawer: React.FC = () => {
   const {
+    can = () => true,
     selectedJob,
     isJobDrawerOpen,
     setIsJobDrawerOpen,
@@ -56,6 +57,8 @@ export const ProductionJobDrawer: React.FC = () => {
     releaseReservation,
     consumeReservation,
   } = useArteFlow();
+  const canManageProduction = can('arteflow.production.manage');
+  const canManageInventory = can('arteflow.inventory.manage');
 
   const [events, setEvents] = useState<ProductionEvent[]>([]);
   const [requirements, setRequirements] = useState<ProductionMaterialRequirement[]>([]);
@@ -97,26 +100,32 @@ export const ProductionJobDrawer: React.FC = () => {
   const sortedStages = [...stages].sort((a, b) => a.sequence - b.sequence);
 
   const handleStageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!canManageProduction) return;
     moveJobStage(selectedJob.id, e.target.value);
   };
 
   const handleArtworkChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!canManageProduction) return;
     updateArtworkGate(selectedJob.id, e.target.value as ArtworkGate);
   };
 
   const handleMaterialChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!canManageProduction) return;
     updateMaterialGate(selectedJob.id, e.target.value as MaterialGate);
   };
 
   const handleFinancialChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!canManageProduction) return;
     updateFinancialGate(selectedJob.id, e.target.value as FinancialGate);
   };
 
   const handlePriorityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!canManageProduction) return;
     updateJobPriority(selectedJob.id, e.target.value as Priority);
   };
 
   const handleAssigneeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!canManageProduction) return;
     const val = e.target.value;
     if (val === 'UNASSIGNED') {
       updateJobAssignee(selectedJob.id, null);
@@ -133,6 +142,7 @@ export const ProductionJobDrawer: React.FC = () => {
   };
 
   const handleDeadlineChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!canManageProduction) return;
     if (e.target.value) {
       const date = new Date(e.target.value);
       date.setHours(18, 0, 0, 0);
@@ -142,6 +152,7 @@ export const ProductionJobDrawer: React.FC = () => {
 
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageProduction) return;
     if (!newNote.trim()) return;
     await addJobNote(selectedJob.id, newNote.trim());
     setNewNote('');
@@ -150,6 +161,7 @@ export const ProductionJobDrawer: React.FC = () => {
 
   const handleAddRequirementSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageInventory) return;
     setMaterialActionError('');
 
     const targetMatId = selectedMatId || (materials.filter((m) => m.isActive)[0]?.id ?? '');
@@ -181,6 +193,7 @@ export const ProductionJobDrawer: React.FC = () => {
   };
 
   const handleReserve = async (req: ProductionMaterialRequirement, amountMilli: number) => {
+    if (!canManageInventory) return;
     setMaterialActionError('');
     try {
       await reserveRequirement({
@@ -194,6 +207,7 @@ export const ProductionJobDrawer: React.FC = () => {
   };
 
   const handleRelease = async (reservationId: string) => {
+    if (!canManageInventory) return;
     setMaterialActionError('');
     try {
       await releaseReservation(reservationId);
@@ -204,6 +218,7 @@ export const ProductionJobDrawer: React.FC = () => {
   };
 
   const handleConsume = async (reservationId: string) => {
+    if (!canManageInventory) return;
     setMaterialActionError('');
     try {
       await consumeReservation(reservationId);
@@ -291,7 +306,7 @@ export const ProductionJobDrawer: React.FC = () => {
           )}
 
           {/* Core Controls: Stage, Gates & Priority */}
-          <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-4">
+          {canManageProduction && <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-4">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
               <Layers className="w-4 h-4 text-sky-600" />
               <span>Controles Operacionais da OP</span>
@@ -420,7 +435,7 @@ export const ProductionJobDrawer: React.FC = () => {
                 />
               </div>
             </div>
-          </div>
+          </div>}
 
           {/* SECTION: PLANO DE MATERIAIS & RESERVAS (FASE 2A) */}
           <div className="border border-slate-200 rounded-xl p-4 space-y-4 bg-white shadow-2xs">
@@ -432,7 +447,7 @@ export const ProductionJobDrawer: React.FC = () => {
                 </h4>
               </div>
 
-              {!isAddingReq && (
+              {canManageInventory && !isAddingReq && (
                 <button
                   onClick={() => setIsAddingReq(true)}
                   className="px-2.5 py-1 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg flex items-center gap-1 transition-colors"
@@ -451,7 +466,7 @@ export const ProductionJobDrawer: React.FC = () => {
             )}
 
             {/* Form de Vincular Material */}
-            {isAddingReq && (
+            {canManageInventory && isAddingReq && (
               <form
                 onSubmit={handleAddRequirementSubmit}
                 className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3"
@@ -595,7 +610,7 @@ export const ProductionJobDrawer: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-1.5">
-                          {uncoveredMilli > 0 && (
+                          {canManageInventory && uncoveredMilli > 0 && (
                             <button
                               onClick={() => handleReserve(req, uncoveredMilli)}
                               className="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded font-semibold text-[11px] flex items-center gap-1 shadow-2xs transition-colors"
@@ -605,7 +620,7 @@ export const ProductionJobDrawer: React.FC = () => {
                             </button>
                           )}
 
-                          {activeRes.map((res) => (
+                          {canManageInventory && activeRes.map((res) => (
                             <div key={res.id} className="flex items-center gap-1">
                               <button
                                 onClick={() => handleConsume(res.id)}
@@ -742,7 +757,7 @@ export const ProductionJobDrawer: React.FC = () => {
             </div>
 
             {/* Add note input */}
-            <form onSubmit={handleAddNote} className="flex gap-2 pt-1">
+            {canManageProduction && <form onSubmit={handleAddNote} className="flex gap-2 pt-1">
               <input
                 type="text"
                 placeholder="Registrar anotação operacional no histórico..."
@@ -758,7 +773,7 @@ export const ProductionJobDrawer: React.FC = () => {
                 <Send className="w-3.5 h-3.5" />
                 <span>Salvar</span>
               </button>
-            </form>
+            </form>}
 
             {/* Timeline */}
             <div className="space-y-2.5 pt-2 max-h-60 overflow-y-auto">

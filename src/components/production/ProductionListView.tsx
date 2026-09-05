@@ -9,6 +9,7 @@ import { ChevronRight, ChevronLeft, AlertTriangle, Clock, Eye, Layers } from 'lu
 
 export const ProductionListView: React.FC = () => {
   const {
+    can = () => true,
     stages,
     jobs,
     filter,
@@ -17,6 +18,7 @@ export const ProductionListView: React.FC = () => {
     setSelectedJob,
     setIsJobDrawerOpen,
   } = useArteFlow();
+  const canManageProduction = can('arteflow.production.manage');
 
   const sortedStages = [...stages].sort((a, b) => a.sequence - b.sequence);
   const stageMap = new Map(stages.map((s) => [s.id, s]));
@@ -148,14 +150,14 @@ export const ProductionListView: React.FC = () => {
                     {/* Actions */}
                     <td className="px-4 py-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       <div className="inline-flex items-center gap-1">
-                        <button
+                        {canManageProduction && <button
                           onClick={() => moveJobPrev(job.id)}
                           disabled={isFirstStage}
                           className="p-1 rounded text-slate-500 hover:bg-slate-200 disabled:text-slate-300 disabled:hover:bg-transparent"
                           title="Voltar etapa"
                         >
                           <ChevronLeft className="w-4 h-4" />
-                        </button>
+                        </button>}
                         <button
                           onClick={() => {
                             setSelectedJob(job);
@@ -166,14 +168,14 @@ export const ProductionListView: React.FC = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button
+                        {canManageProduction && <button
                           onClick={() => moveJobNext(job.id)}
                           disabled={isLastStage}
                           className="p-1 rounded text-sky-700 bg-sky-50 hover:bg-sky-100 disabled:text-slate-300 disabled:bg-transparent"
                           title="Avançar etapa"
                         >
                           <ChevronRight className="w-4 h-4" />
-                        </button>
+                        </button>}
                       </div>
                     </td>
                   </tr>

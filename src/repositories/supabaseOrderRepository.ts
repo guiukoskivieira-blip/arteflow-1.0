@@ -177,6 +177,21 @@ export class SupabaseOrderRepository implements IOrderRepository {
     return data as Order;
   }
 
+  async createWithProductionJobs(organizationId: string, order: Order): Promise<Order> {
+    if (order.organizationId !== organizationId) throw new Error('CROSS_TENANT_ORDER_WRITE');
+
+    const { data, error } = await this.supabase.rpc('arteflow_create_order_with_production', {
+      p_organization_id: organizationId,
+      p_origin: order.origin,
+      p_customer: order.customer,
+      p_items: order.items,
+      p_notes: order.notes ?? null,
+      p_delivery_date: order.deliveryDateISO,
+    });
+    if (error) throw new Error(`Não foi possível criar o pedido e a produção: ${error.message}`);
+    return data as Order;
+  }
+
   async delete(_organizationId: string, _id: string): Promise<boolean> {
     throw new Error('A exclusão de pedidos não está habilitada no modo conectado.');
   }

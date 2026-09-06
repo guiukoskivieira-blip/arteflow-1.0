@@ -79,8 +79,13 @@ export class OrderService {
       throw new Error('O nome do cliente é obrigatório.');
     }
 
-    const existingOrders = await this.orderRepo.list(organizationId);
-    const existingJobs = await this.jobRepo.list(organizationId);
+    const orderRepoWithAtomic = this.orderRepo as IOrderRepository & {
+      createWithProductionJobs?: (orgId: string, ord: Order) => Promise<Order>;
+    };
+    const isAtomicBackend = typeof orderRepoWithAtomic.createWithProductionJobs === 'function';
+
+    const existingOrders = isAtomicBackend ? [] : await this.orderRepo.list(organizationId);
+    const existingJobs = isAtomicBackend ? [] : await this.jobRepo.list(organizationId);
 
     const orderId = this.generateId('order');
     const orderNumber = this.formatSequentialCode('PED', existingOrders.length);
@@ -198,6 +203,12 @@ export class OrderService {
     };
 
     // Salva no repositório
+    if (isAtomicBackend && typeof orderRepoWithAtomic.createWithProductionJobs === 'function') {
+      const savedOrder = await orderRepoWithAtomic.createWithProductionJobs(organizationId, order);
+      const linkedJobs = await this.jobRepo.listByOrderId(organizationId, savedOrder.id);
+      return { order: savedOrder, jobs: linkedJobs };
+    }
+
     const savedOrder = await this.orderRepo.save(organizationId, order);
     const savedItemByGeneratedJobId = new Map(
       savedOrder.items.filter(item => item.generatedJobId).map(item => [item.generatedJobId, item])

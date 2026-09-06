@@ -37,7 +37,30 @@ export const FinancialPage: React.FC = () => {
     return (!query || `${item.supplierName} ${item.purchaseOrderNumber ?? ''} ${item.description}`.toLocaleLowerCase('pt-BR').includes(query)) && (status === 'ALL' || item.status === status);
   }), [payables, search, status]);
   const titleSettlements = historyTitle ? settlements.filter(item => historyTitle.kind === 'RECEIVABLE' ? item.receivableId === historyTitle.value.id : item.payableId === historyTitle.value.id) : [];
-  const openPayment = (title: SelectedTitle) => { if (canManage && title.value.status !== 'PAID' && title.value.status !== 'CANCELLED') { setSelected(title); setAmount(''); setNotes(''); setError(''); } };
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [lastSubmittedPayload, setLastSubmittedPayload] = useState<string | null>(null);
+  const generateIdempotencyKey = (titleId: string) => {
+    const random = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    return `settle:${titleId}:${random}`;
+  };
+  const openPayment = (title: SelectedTitle) => {
+    if (canManage && title.value.status !== 'PAID' && title.value.status !== 'CANCELLED') {
+      setSelected(title);
+      setAmount('');
+      setNotes('');
+      setError('');
+      setActiveKey(generateIdempotencyKey(title.value.id));
+      setLastSubmittedPayload(null);
+    }
+  };
+  const closePayment = () => {
+    setSelected(null);
+    setActiveKey(null);
+    setLastSubmittedPayload(null);
+    setError('');
+  };
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); if (!canManage || !selected || submitting) return;
     const amountCents = parseBRLInputToCents(amount);
@@ -47,10 +70,17 @@ export const FinancialPage: React.FC = () => {
     if (amountCents > balance) return setError('O pagamento não pode superar o saldo em aberto.');
     setSubmitting(true); setError('');
     try {
-      const idempotencyKey = `${selected.value.id}:${Date.now()}:${amountCents}`;
-      if (selected.kind === 'RECEIVABLE') await registerReceivablePayment({ receivableId: selected.value.id, amountCents, paidAt: settledAt, method, notes, idempotencyKey });
-      else await context.registerPayableSettlement({ payableId: selected.value.id, amountCents, settledAt, method, notes, idempotencyKey });
-      setSelected(null);
+      const currentPayload = JSON.stringify({ amountCents, settledAt, method, notes: notes.trim() });
+      let keyToUse = activeKey;
+      if (!keyToUse || (lastSubmittedPayload !== null && lastSubmittedPayload !== currentPayload)) {
+        keyToUse = generateIdempotencyKey(selected.value.id);
+        setActiveKey(keyToUse);
+      }
+      setLastSubmittedPayload(currentPayload);
+
+      if (selected.kind === 'RECEIVABLE') await registerReceivablePayment({ receivableId: selected.value.id, amountCents, paidAt: settledAt, method, notes, idempotencyKey: keyToUse });
+      else await context.registerPayableSettlement({ payableId: selected.value.id, amountCents, settledAt, method, notes, idempotencyKey: keyToUse });
+      closePayment();
     } catch (cause: any) { setError(cause.message || 'Não foi possível registrar o pagamento.'); }
     finally { setSubmitting(false); }
   };
@@ -66,7 +96,7 @@ export const FinancialPage: React.FC = () => {
         {((tab==='RECEIVABLE'&&receivableRows.length===0)||(tab==='PAYABLE'&&payableRows.length===0))&&<tr><td colSpan={canManage?8:7} className="p-8 text-center text-slate-500">Nenhuma conta encontrada.</td></tr>}
       </tbody></table></div></div>
     {historyTitle&&<HistoryModal title={historyTitle} settlements={titleSettlements} close={()=>setHistoryTitle(null)}/>}
-    {canManage&&selected&&<div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4"><form onSubmit={submit} className="bg-white rounded-2xl p-5 w-full max-w-md space-y-4" aria-label="Registrar pagamento"><div className="flex justify-between"><div><h3 className="font-bold">Registrar pagamento</h3><p className="text-xs text-slate-500">Saldo: {formatCentsToBRL(selected.value.totalCents-(selected.kind==='RECEIVABLE'?selected.value.receivedCents:selected.value.paidCents))}</p></div><button type="button" onClick={()=>setSelected(null)} aria-label="Fechar"><X/></button></div><label className="block text-xs font-semibold">Valor<input autoFocus value={amount} onChange={(e)=>setAmount(e.target.value)} placeholder="0,00" className="mt-1 w-full border rounded-lg p-2.5 text-sm"/></label><label className="block text-xs font-semibold">Data<input type="date" value={settledAt} onChange={(e)=>setSettledAt(e.target.value)} className="mt-1 w-full border rounded-lg p-2.5 text-sm"/></label><label className="block text-xs font-semibold">Forma<select value={method} onChange={(e)=>setMethod(e.target.value as PaymentMethod)} className="mt-1 w-full border rounded-lg p-2.5 text-sm"><option value="PIX">Pix</option><option value="TRANSFER">Transferência</option><option value="CASH">Dinheiro</option><option value="CARD">Cartão</option><option value="OTHER">Outro</option></select></label><label className="block text-xs font-semibold">Observação<textarea value={notes} onChange={(e)=>setNotes(e.target.value)} className="mt-1 w-full border rounded-lg p-2.5 text-sm"/></label>{error&&<p role="alert" className="text-sm text-red-600">{error}</p>}<button disabled={submitting} className="w-full py-2.5 rounded-lg bg-sky-600 text-white font-semibold disabled:opacity-50">{submitting?'Registrando...':'Confirmar pagamento'}</button></form></div>}
+    {canManage&&selected&&<div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4"><form onSubmit={submit} className="bg-white rounded-2xl p-5 w-full max-w-md space-y-4" aria-label="Registrar pagamento"><div className="flex justify-between"><div><h3 className="font-bold">Registrar pagamento</h3><p className="text-xs text-slate-500">Saldo: {formatCentsToBRL(selected.value.totalCents-(selected.kind==='RECEIVABLE'?selected.value.receivedCents:selected.value.paidCents))}</p></div><button type="button" onClick={closePayment} aria-label="Fechar"><X/></button></div><label className="block text-xs font-semibold">Valor<input autoFocus value={amount} onChange={(e)=>setAmount(e.target.value)} placeholder="0,00" className="mt-1 w-full border rounded-lg p-2.5 text-sm"/></label><label className="block text-xs font-semibold">Data<input type="date" value={settledAt} onChange={(e)=>setSettledAt(e.target.value)} className="mt-1 w-full border rounded-lg p-2.5 text-sm"/></label><label className="block text-xs font-semibold">Forma<select value={method} onChange={(e)=>setMethod(e.target.value as PaymentMethod)} className="mt-1 w-full border rounded-lg p-2.5 text-sm"><option value="PIX">Pix</option><option value="TRANSFER">Transferência</option><option value="CASH">Dinheiro</option><option value="CARD">Cartão</option><option value="OTHER">Outro</option></select></label><label className="block text-xs font-semibold">Observação<textarea value={notes} onChange={(e)=>setNotes(e.target.value)} className="mt-1 w-full border rounded-lg p-2.5 text-sm"/></label>{error&&<p role="alert" className="text-sm text-red-600">{error}</p>}<button disabled={submitting} className="w-full py-2.5 rounded-lg bg-sky-600 text-white font-semibold disabled:opacity-50">{submitting?'Registrando...':'Confirmar pagamento'}</button></form></div>}
   </div>;
 };
 

@@ -229,6 +229,40 @@ describe('fundação Prexyon fail-closed', () => {
     const config = getArteFlowRuntimeConfig({ DEV: false, PROD: true, VITE_ARTEFLOW_MODE: 'standalone' });
     expect(config.mode).toBe('connected');
   });
+
+  it('27b. prioriza VITE_SUPABASE_PUBLISHABLE_KEY com fallback para VITE_SUPABASE_ANON_KEY e fail-closed', () => {
+    // 1. Ambas definidas: prioriza publishable
+    const withBoth = getArteFlowRuntimeConfig({
+      VITE_SUPABASE_URL: 'https://example.supabase.co',
+      VITE_SUPABASE_PUBLISHABLE_KEY: 'pk-primary',
+      VITE_SUPABASE_ANON_KEY: 'anon-legacy',
+    });
+    expect(withBoth.supabaseKey).toBe('pk-primary');
+    expect(withBoth.isSupabaseConfigured).toBe(true);
+
+    // 2. Apenas publishable definida
+    const withPublishableOnly = getArteFlowRuntimeConfig({
+      VITE_SUPABASE_URL: 'https://example.supabase.co',
+      VITE_SUPABASE_PUBLISHABLE_KEY: 'pk-primary',
+    });
+    expect(withPublishableOnly.supabaseKey).toBe('pk-primary');
+    expect(withPublishableOnly.isSupabaseConfigured).toBe(true);
+
+    // 3. Apenas anon definida (fallback)
+    const withAnonOnly = getArteFlowRuntimeConfig({
+      VITE_SUPABASE_URL: 'https://example.supabase.co',
+      VITE_SUPABASE_ANON_KEY: 'anon-legacy',
+    });
+    expect(withAnonOnly.supabaseKey).toBe('anon-legacy');
+    expect(withAnonOnly.isSupabaseConfigured).toBe(true);
+
+    // 4. Nenhuma chave definida: fail-closed
+    const withNone = getArteFlowRuntimeConfig({
+      VITE_SUPABASE_URL: 'https://example.supabase.co',
+    });
+    expect(withNone.supabaseKey).toBe('');
+    expect(withNone.isSupabaseConfigured).toBe(false);
+  });
 });
 
 describe('Prexyon SSO V2', () => {

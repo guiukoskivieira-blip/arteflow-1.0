@@ -35,7 +35,7 @@ export function getArteFlowRuntimeConfig(
     String(env.MODE ?? '').toLowerCase() === 'standalone';
   const mode: ArteFlowRuntimeMode = isDev && explicitStandalone && !isProduction ? 'standalone' : 'connected';
   const supabaseUrl = safeHttpUrl(env.VITE_SUPABASE_URL);
-  const supabaseKey = String(env.VITE_SUPABASE_ANON_KEY ?? env.VITE_SUPABASE_PUBLISHABLE_KEY ?? '').trim();
+  const supabaseKey = String(env.VITE_SUPABASE_PUBLISHABLE_KEY ?? env.VITE_SUPABASE_ANON_KEY ?? '').trim();
   const prexyonPortalUrl = safeHttpUrl(env.VITE_PREXYON_PORTAL_URL);
   const arteFlowAppUrl = safeHttpUrl(env.VITE_ARTEFLOW_APP_URL);
 

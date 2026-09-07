@@ -230,33 +230,16 @@ describe('fundação Prexyon fail-closed', () => {
     expect(config.mode).toBe('connected');
   });
 
-  it('27b. prioriza VITE_SUPABASE_PUBLISHABLE_KEY com fallback para VITE_SUPABASE_ANON_KEY e fail-closed', () => {
-    // 1. Ambas definidas: prioriza publishable
-    const withBoth = getArteFlowRuntimeConfig({
-      VITE_SUPABASE_URL: 'https://example.supabase.co',
-      VITE_SUPABASE_PUBLISHABLE_KEY: 'pk-primary',
-      VITE_SUPABASE_ANON_KEY: 'anon-legacy',
-    });
-    expect(withBoth.supabaseKey).toBe('pk-primary');
-    expect(withBoth.isSupabaseConfigured).toBe(true);
-
-    // 2. Apenas publishable definida
-    const withPublishableOnly = getArteFlowRuntimeConfig({
+  it('27b. utiliza exclusivamente VITE_SUPABASE_PUBLISHABLE_KEY com fail-closed sem fallback anon', () => {
+    // 1. Publishable definida
+    const withPublishable = getArteFlowRuntimeConfig({
       VITE_SUPABASE_URL: 'https://example.supabase.co',
       VITE_SUPABASE_PUBLISHABLE_KEY: 'pk-primary',
     });
-    expect(withPublishableOnly.supabaseKey).toBe('pk-primary');
-    expect(withPublishableOnly.isSupabaseConfigured).toBe(true);
+    expect(withPublishable.supabaseKey).toBe('pk-primary');
+    expect(withPublishable.isSupabaseConfigured).toBe(true);
 
-    // 3. Apenas anon definida (fallback)
-    const withAnonOnly = getArteFlowRuntimeConfig({
-      VITE_SUPABASE_URL: 'https://example.supabase.co',
-      VITE_SUPABASE_ANON_KEY: 'anon-legacy',
-    });
-    expect(withAnonOnly.supabaseKey).toBe('anon-legacy');
-    expect(withAnonOnly.isSupabaseConfigured).toBe(true);
-
-    // 4. Nenhuma chave definida: fail-closed
+    // 2. Chave ausente: fail-closed
     const withNone = getArteFlowRuntimeConfig({
       VITE_SUPABASE_URL: 'https://example.supabase.co',
     });

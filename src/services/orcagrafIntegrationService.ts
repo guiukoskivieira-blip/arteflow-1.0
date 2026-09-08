@@ -46,7 +46,7 @@ export class OrcagrafIntegrationService {
       // Check user product access for both products
       const { data: accesses, error: accessError } = await this.supabase
         .from('organization_member_product_access')
-        .select('product_code, product_key, is_enabled')
+        .select('product_key, is_enabled')
         .eq('organization_id', organizationId)
         .eq('user_id', userId)
         .in('product_key', ['orcagraf', 'arteflow']);
@@ -61,14 +61,12 @@ export class OrcagrafIntegrationService {
       }
 
       const hasArteflow = accesses.some(
-        (a: any) =>
-          (a.product_key === 'arteflow' || a.product_code === 'arteflow') &&
-          a.is_enabled === true
+        (a: { product_key: string; is_enabled: boolean }) =>
+          a.product_key === 'arteflow' && a.is_enabled === true
       );
       const hasOrcagraf = accesses.some(
-        (a: any) =>
-          (a.product_key === 'orcagraf' || a.product_code === 'orcagraf') &&
-          a.is_enabled === true
+        (a: { product_key: string; is_enabled: boolean }) =>
+          a.product_key === 'orcagraf' && a.is_enabled === true
       );
 
       if (!hasArteflow) {

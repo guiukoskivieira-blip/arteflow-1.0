@@ -61,6 +61,7 @@ describe('P2-01 — Importação de Orçamento Aprovado do OrçaGraf com Dual En
   // F, G, H, I: Testes de Integração de Serviço e Dual Product Access
   describe('OrcagrafIntegrationService & Acesso (F-I)', () => {
     it('F. Usuário sem product_access para OrçaGraf recebe canImport: false', async () => {
+      let selectedCols = '';
       const mockSupabase = {
         rpc: vi.fn().mockImplementation((name: string) => {
           if (name === 'prexyon_get_organization_entitlements') {
@@ -74,17 +75,20 @@ describe('P2-01 — Importação de Orçamento Aprovado do OrçaGraf com Dual En
         from: vi.fn().mockImplementation((table: string) => {
           if (table === 'organization_member_product_access') {
             return {
-              select: () => ({
-                eq: () => ({
+              select: (cols: string) => {
+                selectedCols = cols;
+                return {
                   eq: () => ({
-                    in: () =>
-                      Promise.resolve({
-                        data: [{ product_code: 'arteflow', is_enabled: true }],
-                        error: null,
-                      }),
+                    eq: () => ({
+                      in: () =>
+                        Promise.resolve({
+                          data: [{ product_key: 'arteflow', is_enabled: true }],
+                          error: null,
+                        }),
+                    }),
                   }),
-                }),
-              }),
+                };
+              },
             };
           }
           return { select: () => ({ eq: () => Promise.resolve({ data: [], error: null }) }) };
@@ -96,6 +100,8 @@ describe('P2-01 — Importação de Orçamento Aprovado do OrçaGraf com Dual En
       expect(res.canImport).toBe(false);
       expect(res.hasUserAccess).toBe(false);
       expect(res.reason).toMatch(/usuário não possui acesso individual ao OrçaGraf/i);
+      expect(selectedCols).toBe('product_key, is_enabled');
+      expect(selectedCols).not.toContain('product_code');
     });
 
     it('G. Usuário sem product_access para ArteFlow recebe canImport: false', async () => {
@@ -117,7 +123,7 @@ describe('P2-01 — Importação de Orçamento Aprovado do OrçaGraf com Dual En
                   eq: () => ({
                     in: () =>
                       Promise.resolve({
-                        data: [{ product_code: 'orcagraf', is_enabled: true }],
+                        data: [{ product_key: 'orcagraf', is_enabled: true }],
                         error: null,
                       }),
                   }),
@@ -156,8 +162,8 @@ describe('P2-01 — Importação de Orçamento Aprovado do OrçaGraf com Dual En
                     in: () =>
                       Promise.resolve({
                         data: [
-                          { product_code: 'orcagraf', is_enabled: true },
-                          { product_code: 'arteflow', is_enabled: true },
+                          { product_key: 'orcagraf', is_enabled: true },
+                          { product_key: 'arteflow', is_enabled: true },
                         ],
                         error: null,
                       }),
@@ -175,6 +181,35 @@ describe('P2-01 — Importação de Orçamento Aprovado do OrçaGraf com Dual En
       expect(res.canImport).toBe(true);
       expect(res.isEntitled).toBe(true);
       expect(res.hasUserAccess).toBe(true);
+    });
+
+    it('H2. Erro de query em product_access não mascara como falta de plano', async () => {
+      const mockSupabase = {
+        rpc: vi.fn().mockResolvedValue({
+          data: [{ is_entitled: true, effective_products: ['orcagraf', 'arteflow'] }],
+          error: null,
+        }),
+        from: vi.fn().mockReturnValue({
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                in: () =>
+                  Promise.resolve({
+                    data: null,
+                    error: { message: 'relation or column error' },
+                  }),
+              }),
+            }),
+          }),
+        }),
+      } as any;
+
+      const service = new OrcagrafIntegrationService(mockSupabase);
+      const res = await service.checkIntegrationEntitlement('org-1', 'user-1');
+      expect(res.canImport).toBe(false);
+      expect(res.isEntitled).toBe(true);
+      expect(res.hasUserAccess).toBe(false);
+      expect(res.reason).toBe('Não foi possível validar o acesso individual aos produtos.');
     });
 
     it('I. RPC 42501 / permission denied retorna erro amigável seguro sem dados e sem fallback demo', async () => {

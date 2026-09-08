@@ -92,23 +92,20 @@ export const PrexyonBar: React.FC = () => {
         throw new Error('Sessão Supabase indisponível para gerar troca segura de aplicativo.');
       }
 
-      const ssoCode = await generateSsoCodeForProduct(supabase, orgId, targetProduct.code);
-
       let targetBaseUrl = '';
       if (targetProduct.code === 'orcagraf') {
-        targetBaseUrl = config.orcagrafAppUrl || (config.prexyonPortalUrl ? `${config.prexyonPortalUrl}/orcagraf` : '');
+        targetBaseUrl = config.orcagrafAppUrl;
       } else if (targetProduct.code === 'artecheck') {
-        targetBaseUrl = config.artecheckAppUrl || (config.prexyonPortalUrl ? `${config.prexyonPortalUrl}/artecheck` : '');
+        targetBaseUrl = config.artecheckAppUrl;
       }
 
       if (!targetBaseUrl) {
-        if (config.prexyonPortalUrl) {
-          window.location.assign(config.prexyonPortalUrl);
-          return;
-        }
-        throw new Error(`URL de destino para ${targetProduct.name} não configurada.`);
+        throw new Error(
+          `URL do aplicativo ${targetProduct.name} não configurada no ambiente. Acesse pelo Portal Prexyon.`
+        );
       }
 
+      const ssoCode = await generateSsoCodeForProduct(supabase, orgId, targetProduct.code);
       const redirectUrl = `${targetBaseUrl}/auth/prexyon?code=${encodeURIComponent(ssoCode)}&org=${encodeURIComponent(orgId)}`;
       window.location.assign(redirectUrl);
     } catch (err: any) {

@@ -186,8 +186,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     generation.current += 1;
     setState({ ...INITIAL_STATE, mode: config.mode, status: 'UNAUTHORIZED', reason: 'SIGNED_OUT' });
     const supabase = getSupabaseClient();
-    if (supabase) await supabase.auth.signOut();
-  }, [config.mode]);
+    if (supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // ignore sign out network/session errors during teardown
+      }
+    }
+    if (config.prexyonPortalUrl) {
+      window.location.assign(config.prexyonPortalUrl);
+    }
+  }, [config.mode, config.prexyonPortalUrl]);
 
   const returnToPrexyon = useCallback(() => {
     if (config.prexyonPortalUrl) window.location.assign(config.prexyonPortalUrl);

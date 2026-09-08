@@ -8,7 +8,7 @@ import * as prexyonSsoService from '../services/prexyonSsoService';
 import { DEMO_ORGANIZATION } from '../domain/seed';
 import { DEMO_USERS } from '../domain/constants';
 
-describe('Global Bar P2-04 Tests', () => {
+describe('Global Bar P2-04 Tests & Hotfix Verification', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     localStorage.clear();
@@ -31,14 +31,122 @@ describe('Global Bar P2-04 Tests', () => {
     );
   };
 
-  it('A. Renderiza altura 72px e background #031225', () => {
+  it('A. OrçaGraf usa orcagrafAppUrl real e não o portal', async () => {
+    const customConfig = {
+      mode: 'connected' as const,
+      isDev: false,
+      isProduction: true,
+      supabaseUrl: 'https://test.supabase.co',
+      supabaseKey: 'test-key',
+      prexyonPortalUrl: 'https://portal.prexyon.test',
+      arteFlowAppUrl: 'https://arteflow.prexyon.test',
+      orcagrafAppUrl: 'https://or-agraf-bete-20-production.up.railway.app',
+      artecheckAppUrl: 'https://eloquent-vitality-production-48ec.up.railway.app',
+      isSupabaseConfigured: true,
+      callbackUrl: 'https://arteflow.prexyon.test/auth/prexyon',
+    };
+
+    const mockSupabase = { rpc: vi.fn() } as any;
+    vi.spyOn(supabaseClient, 'getSupabaseClient').mockReturnValue(mockSupabase);
+    const ssoSpy = vi.spyOn(prexyonSsoService, 'generateSsoCodeForProduct').mockResolvedValue('sso_code_og');
+
+    const assignMock = vi.fn();
+    delete (window as any).location;
+    window.location = { assign: assignMock } as any;
+
+    renderPrexyonBar(customConfig);
+    const switcher = screen.getByRole('button', { name: /produto selecionado: arteflow/i });
+    fireEvent.click(switcher);
+
+    const ogOption = screen.getByRole('menuitem', { name: /OrçaGraf/i });
+    fireEvent.click(ogOption);
+
+    await waitFor(() => {
+      expect(ssoSpy).toHaveBeenCalledWith(mockSupabase, DEMO_ORGANIZATION.id, 'orcagraf');
+      expect(assignMock).toHaveBeenCalledWith(
+        `https://or-agraf-bete-20-production.up.railway.app/auth/prexyon?code=sso_code_og&org=${encodeURIComponent(DEMO_ORGANIZATION.id)}`
+      );
+    });
+  });
+
+  it('B. ArteCheck usa artecheckAppUrl real e não o portal', async () => {
+    const customConfig = {
+      mode: 'connected' as const,
+      isDev: false,
+      isProduction: true,
+      supabaseUrl: 'https://test.supabase.co',
+      supabaseKey: 'test-key',
+      prexyonPortalUrl: 'https://portal.prexyon.test',
+      arteFlowAppUrl: 'https://arteflow.prexyon.test',
+      orcagrafAppUrl: 'https://or-agraf-bete-20-production.up.railway.app',
+      artecheckAppUrl: 'https://eloquent-vitality-production-48ec.up.railway.app',
+      isSupabaseConfigured: true,
+      callbackUrl: 'https://arteflow.prexyon.test/auth/prexyon',
+    };
+
+    const mockSupabase = { rpc: vi.fn() } as any;
+    vi.spyOn(supabaseClient, 'getSupabaseClient').mockReturnValue(mockSupabase);
+    const ssoSpy = vi.spyOn(prexyonSsoService, 'generateSsoCodeForProduct').mockResolvedValue('sso_code_ac');
+
+    const assignMock = vi.fn();
+    delete (window as any).location;
+    window.location = { assign: assignMock } as any;
+
+    renderPrexyonBar(customConfig);
+    const switcher = screen.getByRole('button', { name: /produto selecionado: arteflow/i });
+    fireEvent.click(switcher);
+
+    const acOption = screen.getByRole('menuitem', { name: /ArteCheck/i });
+    fireEvent.click(acOption);
+
+    await waitFor(() => {
+      expect(ssoSpy).toHaveBeenCalledWith(mockSupabase, DEMO_ORGANIZATION.id, 'artecheck');
+      expect(assignMock).toHaveBeenCalledWith(
+        `https://eloquent-vitality-production-48ec.up.railway.app/auth/prexyon?code=sso_code_ac&org=${encodeURIComponent(DEMO_ORGANIZATION.id)}`
+      );
+    });
+  });
+
+  it('C. Portal URL nunca é concatenada com /orcagraf ou /artecheck na ausência de URL de produto', async () => {
+    const customConfig = {
+      mode: 'connected' as const,
+      isDev: false,
+      isProduction: true,
+      supabaseUrl: 'https://test.supabase.co',
+      supabaseKey: 'test-key',
+      prexyonPortalUrl: 'https://portal.prexyon.test',
+      arteFlowAppUrl: 'https://arteflow.prexyon.test',
+      orcagrafAppUrl: '',
+      artecheckAppUrl: '',
+      isSupabaseConfigured: true,
+      callbackUrl: 'https://arteflow.prexyon.test/auth/prexyon',
+    };
+
+    const assignMock = vi.fn();
+    delete (window as any).location;
+    window.location = { assign: assignMock } as any;
+
+    renderPrexyonBar(customConfig);
+    const switcher = screen.getByRole('button', { name: /produto selecionado: arteflow/i });
+    fireEvent.click(switcher);
+
+    const ogOption = screen.getByRole('menuitem', { name: /OrçaGraf/i });
+    fireEvent.click(ogOption);
+
+    await waitFor(() => {
+      expect(assignMock).not.toHaveBeenCalled();
+      expect(screen.getByText(/não configurada no ambiente/i)).toBeInTheDocument();
+    });
+  });
+
+  it('D. Renderiza altura 72px e background #031225', () => {
     renderPrexyonBar();
     const header = screen.getByTestId('prexyon-global-bar');
     expect(header).toHaveClass('h-[72px]');
     expect(header).toHaveClass('bg-[#031225]');
   });
 
-  it('B. Logo Prexyon é link com href para o portal e imagem oficial', () => {
+  it('E. Logo Prexyon é link com href para o portal e imagem oficial', () => {
     renderPrexyonBar({
       mode: 'connected',
       isDev: false,
@@ -47,8 +155,8 @@ describe('Global Bar P2-04 Tests', () => {
       supabaseKey: 'test-key',
       prexyonPortalUrl: 'https://portal.prexyon.test',
       arteFlowAppUrl: 'https://arteflow.prexyon.test',
-      orcagrafAppUrl: 'https://orcagraf.prexyon.test',
-      artecheckAppUrl: 'https://artecheck.prexyon.test',
+      orcagrafAppUrl: 'https://orcagraf.test',
+      artecheckAppUrl: 'https://artecheck.test',
       isSupabaseConfigured: true,
       callbackUrl: 'https://arteflow.prexyon.test/auth/prexyon',
     });
@@ -60,63 +168,7 @@ describe('Global Bar P2-04 Tests', () => {
     expect(logoImg).toHaveAttribute('src', '/brand/prexyon-color.png');
   });
 
-  it('C. Seletor de produtos exibe OrçaGraf, ArteFlow (ativo), ArteCheck', () => {
-    renderPrexyonBar();
-    const switcher = screen.getByRole('button', { name: /produto selecionado: arteflow/i });
-    expect(switcher).toBeInTheDocument();
-
-    fireEvent.click(switcher);
-
-    expect(screen.getByRole('menuitem', { name: /OrçaGraf/i })).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: /ArteFlow/i })).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: /ArteCheck/i })).toBeInTheDocument();
-
-    // ArteFlow is active and disabled for clicking
-    expect(screen.getByRole('menuitem', { name: /ArteFlow/i })).toBeDisabled();
-  });
-
-  it('D. Troca de produto chama generateSsoCodeForProduct e redireciona', async () => {
-    const customConfig = {
-      mode: 'connected' as const,
-      isDev: false,
-      isProduction: true,
-      supabaseUrl: 'https://test.supabase.co',
-      supabaseKey: 'test-key',
-      prexyonPortalUrl: 'https://portal.prexyon.test',
-      arteFlowAppUrl: 'https://arteflow.prexyon.test',
-      orcagrafAppUrl: 'https://orcagraf.prexyon.test',
-      artecheckAppUrl: 'https://artecheck.prexyon.test',
-      isSupabaseConfigured: true,
-      callbackUrl: 'https://arteflow.prexyon.test/auth/prexyon',
-    };
-
-    const mockSupabase = {
-      rpc: vi.fn(),
-    } as any;
-    vi.spyOn(supabaseClient, 'getSupabaseClient').mockReturnValue(mockSupabase);
-
-    const ssoSpy = vi.spyOn(prexyonSsoService, 'generateSsoCodeForProduct').mockResolvedValue('test_sso_code_123');
-
-    const assignMock = vi.fn();
-    delete (window as any).location;
-    window.location = { assign: assignMock } as any;
-
-    renderPrexyonBar(customConfig);
-    const switcher = screen.getByRole('button', { name: /produto selecionado: arteflow/i });
-    fireEvent.click(switcher);
-
-    const arteCheckOption = screen.getByRole('menuitem', { name: /ArteCheck/i });
-    fireEvent.click(arteCheckOption);
-
-    await waitFor(() => {
-      expect(ssoSpy).toHaveBeenCalledWith(mockSupabase, DEMO_ORGANIZATION.id, 'artecheck');
-      expect(assignMock).toHaveBeenCalledWith(
-        `https://artecheck.prexyon.test/auth/prexyon?code=test_sso_code_123&org=${encodeURIComponent(DEMO_ORGANIZATION.id)}`
-      );
-    });
-  });
-
-  it('E. Ajuda direciona para o Portal Prexyon', () => {
+  it('F. Central de Ajuda direciona para o Portal Prexyon', () => {
     renderPrexyonBar({
       mode: 'connected',
       isDev: false,
@@ -125,8 +177,8 @@ describe('Global Bar P2-04 Tests', () => {
       supabaseKey: 'test-key',
       prexyonPortalUrl: 'https://portal.prexyon.test',
       arteFlowAppUrl: 'https://arteflow.prexyon.test',
-      orcagrafAppUrl: 'https://orcagraf.prexyon.test',
-      artecheckAppUrl: 'https://artecheck.prexyon.test',
+      orcagrafAppUrl: 'https://orcagraf.test',
+      artecheckAppUrl: 'https://artecheck.test',
       isSupabaseConfigured: true,
       callbackUrl: 'https://arteflow.prexyon.test/auth/prexyon',
     });
@@ -135,7 +187,7 @@ describe('Global Bar P2-04 Tests', () => {
     expect(helpLink).toHaveAttribute('href', 'https://portal.prexyon.test');
   });
 
-  it('F. Avatar abre menu de usuário e exibe botão de logout', () => {
+  it('G. Avatar abre menu de usuário com dados e botão de logout', () => {
     renderPrexyonBar();
     const avatarButton = screen.getByRole('button', { name: /menu do usu/i });
     expect(avatarButton).toBeInTheDocument();

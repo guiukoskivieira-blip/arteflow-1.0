@@ -8,12 +8,15 @@ export const AccessGate: React.FC<{ children: React.ReactNode }> = ({ children }
   if (status === 'AUTHORIZED') return <>{children}</>;
 
   const loading = status === 'LOADING';
+  const isSignedOut = reason === 'SIGNED_OUT';
   const Icon = loading ? Loader2 : status === 'ERROR' ? AlertTriangle : LockKeyhole;
   const title = loading
     ? 'Validando acesso ao ArteFlow'
-    : status === 'ERROR'
-      ? 'Não foi possível validar o acesso'
-      : 'Acesso ao ArteFlow não autorizado';
+    : isSignedOut
+      ? 'Sessão encerrada'
+      : status === 'ERROR'
+        ? 'Não foi possível validar o acesso'
+        : 'Acesso ao ArteFlow não autorizado';
 
   return (
     <main className="min-h-screen bg-slate-950 text-white grid place-items-center p-6">
@@ -23,9 +26,13 @@ export const AccessGate: React.FC<{ children: React.ReactNode }> = ({ children }
         <p className="mt-2 text-sm leading-6 text-slate-300">
           {loading
             ? 'Confirmando identidade, organização, licença e permissões na Prexyon.'
-            : 'O acesso foi bloqueado de forma segura. Retorne à Prexyon para selecionar uma organização com acesso ao produto.'}
+            : isSignedOut
+              ? 'Você encerrou sua sessão no ArteFlow com segurança. Clique abaixo para retornar ao Portal Prexyon.'
+              : 'O acesso foi bloqueado de forma segura. Retorne à Prexyon para selecionar uma organização com acesso ao produto.'}
         </p>
-        {!loading && reason && <p className="mt-4 rounded-lg bg-slate-950 px-3 py-2 text-xs text-slate-400">Código: {reason}</p>}
+        {!loading && reason && !isSignedOut && (
+          <p className="mt-4 rounded-lg bg-slate-950 px-3 py-2 text-xs text-slate-400">Código: {reason}</p>
+        )}
         {!loading && (
           <button
             type="button"
@@ -39,3 +46,4 @@ export const AccessGate: React.FC<{ children: React.ReactNode }> = ({ children }
     </main>
   );
 };
+

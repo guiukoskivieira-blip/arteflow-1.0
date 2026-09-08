@@ -22,6 +22,91 @@ export const DEMO_ORGANIZATION: Organization = {
   createdAt: '2026-01-15T08:00:00.000Z',
 };
 
+export const DEMO_ORCAGRAF_QUOTES = [
+  {
+    id: 'orc-demo-101',
+    quoteNumber: 'ORC-2026-089',
+    customerName: 'Mega Eventos Corporativos SP',
+    customerDocument: '45.123.789/0001-12',
+    customerEmail: 'contato@megaeventos.com.br',
+    customerPhone: '(11) 97123-4567',
+    customerContactPerson: 'Felipe Martins',
+    totalAmountCents: 450000, // R$ 4.500,00
+    deliveryDate: '2026-09-15',
+    notes: 'Orçamento comercial aprovado via OrçaGraf. Material para estande de feira.',
+    sellerName: 'Marcos Vendas',
+    sellerCommissionPct: 5.0,
+    approvedAt: '2026-09-07T14:30:00.000Z',
+    itemCount: 2,
+    items: [
+      {
+        productName: 'Painel Backdrop Tecido Sublimado 3x2m',
+        category: 'Comunicação Visual',
+        sector: 'Comunicação Visual',
+        width: 300,
+        height: 200,
+        unit: 'cm' as const,
+        quantity: 1,
+        quantityUnit: 'un',
+        unitPriceCents: 250000,
+        totalPriceCents: 250000,
+        finishings: ['Bainha reforçada', 'Ilhós a cada 20cm'],
+        technicalNotes: 'Tecido microfibra pesado 220g sublimação total.',
+      },
+      {
+        productName: 'Totem Promocional MDF 15mm com Adesivo',
+        category: 'Sinalização',
+        sector: 'Acabamento & Montagem',
+        width: 60,
+        height: 180,
+        unit: 'cm' as const,
+        quantity: 2,
+        quantityUnit: 'un',
+        unitPriceCents: 100000,
+        totalPriceCents: 200000,
+        finishings: ['Base de sustentação em ferro', 'Laminação fosca'],
+        technicalNotes: 'Corte especial na CNC conforme vetor anexo.',
+      },
+    ],
+  },
+  {
+    id: 'orc-demo-102',
+    quoteNumber: 'ORC-2026-090',
+    customerName: 'Rede Gastronômica Sabor & Arte',
+    customerDocument: '22.888.999/0001-34',
+    customerEmail: 'compras@saborearte.com.br',
+    customerPhone: '(11) 98888-7766',
+    customerContactPerson: 'Camila Guimarães',
+    totalAmountCents: 128000, // R$ 1.280,00
+    deliveryDate: '2026-09-12',
+    notes: 'Cardápios e displays de mesa para nova unidade.',
+    sellerName: 'Patrícia Comercial',
+    sellerCommissionPct: 4.5,
+    approvedAt: '2026-09-08T09:15:00.000Z',
+    itemCount: 1,
+    items: [
+      {
+        productName: 'Cardápio Capa Dura 4 Lâminas Couro Sintético',
+        category: 'Editorial & Cardápios',
+        sector: 'Impressão Digital',
+        width: 21,
+        height: 29.7,
+        unit: 'cm' as const,
+        quantity: 40,
+        quantityUnit: 'un',
+        unitPriceCents: 3200,
+        totalPriceCents: 128000,
+        finishings: ['Canto metálico dourado', 'Laminação soft touch'],
+        technicalNotes: 'Impressão digital laser couche 250g.',
+      },
+    ],
+  },
+];
+
+export function getDemoOrcagrafQuotes() {
+  return DEMO_ORCAGRAF_QUOTES;
+}
+
 export function getInitialStages(organizationId: string = DEFAULT_ORGANIZATION_ID): WorkflowStage[] {
   return INITIAL_WORKFLOW_STAGES.map((s) => ({
     ...s,

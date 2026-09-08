@@ -30,8 +30,10 @@ import {
   PurchaseRequestSource,
 } from '../types/procurement';
 import { DEMO_USERS } from '../domain/constants';
-import { getDemoSeedData, DEMO_ORGANIZATION, getInitialStages } from '../domain/seed';
+import { getDemoSeedData, DEMO_ORGANIZATION, getInitialStages, getDemoOrcagrafQuotes } from '../domain/seed';
 import { getDemoProcurementSeedData } from '../domain/procurementSeed';
+import { OrcagrafIntegrationService } from '../services/orcagrafIntegrationService';
+import type { OrcagrafQuote, OrcagrafEntitlementStatus } from '../types/orcagraf';
 import {
   storageKeys,
   CURRENT_SEED_VERSION,
@@ -269,6 +271,10 @@ interface ArteFlowContextType {
   getProcurementEvents: (entityType: string, entityId: string) => Promise<ProcurementEvent[]>;
   registerReceivablePayment: (input: { receivableId: string; amountCents: number; paidAt: string; method: PaymentMethod; notes?: string; idempotencyKey: string }) => Promise<void>;
   registerPayableSettlement: (input: { payableId: string; amountCents: number; settledAt: string; method: PaymentMethod; notes?: string; idempotencyKey: string }) => Promise<void>;
+
+  // Integração OrçaGraf (P2-01)
+  checkOrcagrafEntitlement: () => Promise<OrcagrafEntitlementStatus>;
+  listImportableOrcagrafQuotes: () => Promise<OrcagrafQuote[]>;
 
   // Ações de Ambiente
   resetDemoEnvironment: () => Promise<void>;
@@ -1451,6 +1457,34 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
 
   const clearAllData = clearOperationalData;
 
+  const orcagrafService = useMemo(() => {
+    if (allowDemoData) return null;
+    const supabase = getSupabaseClient();
+    return new OrcagrafIntegrationService(supabase);
+  }, [allowDemoData]);
+
+  const checkOrcagrafEntitlement = useCallback(async (): Promise<OrcagrafEntitlementStatus> => {
+    if (allowDemoData || !orcagrafService) {
+      return {
+        isEntitled: true,
+        hasUserAccess: true,
+        canImport: true,
+      };
+    }
+    return orcagrafService.checkIntegrationEntitlement(organization.id, currentUser.id);
+  }, [allowDemoData, orcagrafService, organization.id, currentUser.id]);
+
+  const listImportableOrcagrafQuotes = useCallback(async (): Promise<OrcagrafQuote[]> => {
+    if (allowDemoData || !orcagrafService) {
+      // Retorna os orçamentos demo que ainda não foram importados
+      const importedQuoteIds = new Set(
+        orders.map((o) => o.orcagrafQuoteId).filter(Boolean)
+      );
+      return getDemoOrcagrafQuotes().filter((q) => !importedQuoteIds.has(q.id));
+    }
+    return orcagrafService.listImportableQuotes(organization.id);
+  }, [allowDemoData, orcagrafService, organization.id, orders]);
+
   return (
     <ArteFlowContext.Provider
       value={{
@@ -1592,6 +1626,9 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
         getProcurementEvents,
         registerReceivablePayment: guardAction('arteflow.finance.manage', registerReceivablePayment),
         registerPayableSettlement: guardAction('arteflow.finance.manage', registerPayableSettlement),
+
+        checkOrcagrafEntitlement,
+        listImportableOrcagrafQuotes,
 
         resetDemoEnvironment: guardAction('arteflow.settings.manage', resetDemoEnvironment),
         resetToDemoSeed: guardAction('arteflow.settings.manage', resetToDemoSeed),

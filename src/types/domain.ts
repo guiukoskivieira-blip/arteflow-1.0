@@ -91,6 +91,9 @@ export interface Order {
   totalAmountCents: number;
   status: OrderStatus;
   notes?: string;
+  orcagrafQuoteId?: string;
+  sellerName?: string;
+  sellerCommissionPct?: number;
   deliveryDateISO: string;
   createdAt: string;
   updatedAt: string;

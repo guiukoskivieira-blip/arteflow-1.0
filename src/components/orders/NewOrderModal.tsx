@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useArteFlow } from '../../context/ArteFlowContext';
+import { getArteFlowRuntimeConfig } from '../../config/runtime';
 import { CreateManualOrderItemInput } from '../../services/orderService';
 import { Priority, OrderOrigin } from '../../types/domain';
 import { SECTORS } from '../../domain/constants';
 import { parseBRLInputToCents, formatCentsToBRL } from '../../domain/money';
+import type { OrcagrafQuote, OrcagrafEntitlementStatus } from '../../types/orcagraf';
 import {
   X,
   Plus,
@@ -12,6 +14,13 @@ import {
   Building2,
   Package,
   Sparkles,
+  Download,
+  FileText,
+  CheckCircle2,
+  AlertCircle,
+  ExternalLink,
+  Loader2,
+  Search,
 } from 'lucide-react';
 
 interface ItemFormState {
@@ -45,8 +54,29 @@ const emptyItem: ItemFormState = {
 };
 
 export const NewOrderModal: React.FC = () => {
-  const { isNewOrderModalOpen, setIsNewOrderModalOpen, createManualOrder } = useArteFlow();
+  const {
+    isNewOrderModalOpen,
+    setIsNewOrderModalOpen,
+    createManualOrder,
+    checkOrcagrafEntitlement,
+    listImportableOrcagrafQuotes,
+  } = useArteFlow();
+  const config = useMemo(() => getArteFlowRuntimeConfig(), []);
 
+  // Creation mode: 'manual' vs 'orcagraf'
+  const [creationMode, setCreationMode] = useState<'manual' | 'orcagraf'>('manual');
+
+  // OrçaGraf Entitlement and Quote List State
+  const [entitlementStatus, setEntitlementStatus] = useState<OrcagrafEntitlementStatus | null>(null);
+  const [isLoadingEntitlement, setIsLoadingEntitlement] = useState(false);
+  const [quotes, setQuotes] = useState<OrcagrafQuote[]>([]);
+  const [isLoadingQuotes, setIsLoadingQuotes] = useState(false);
+  const [quoteSearchQuery, setQuoteSearchQuery] = useState('');
+  const [importedQuoteReference, setImportedQuoteReference] = useState<string | null>(null);
+  const [sellerName, setSellerName] = useState<string | null>(null);
+  const [sellerCommissionPct, setSellerCommissionPct] = useState<number | undefined>(undefined);
+
+  // Form Fields
   const [customerName, setCustomerName] = useState('');
   const [customerDoc, setCustomerDoc] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
@@ -82,15 +112,119 @@ export const NewOrderModal: React.FC = () => {
     }
   }, [isNewOrderModalOpen]);
 
+  // Load entitlement check and quotes when switching to orcagraf tab
+  useEffect(() => {
+    if (isNewOrderModalOpen && creationMode === 'orcagraf') {
+      let active = true;
+      setIsLoadingEntitlement(true);
+
+      checkOrcagrafEntitlement()
+        .then((status) => {
+          if (!active) return;
+          setEntitlementStatus(status);
+          setIsLoadingEntitlement(false);
+
+          if (status.canImport) {
+            setIsLoadingQuotes(true);
+            listImportableOrcagrafQuotes()
+              .then((loadedQuotes) => {
+                if (!active) return;
+                setQuotes(loadedQuotes);
+              })
+              .catch((err) => {
+                if (!active) return;
+                setErrorMsg(err.message || 'Erro ao carregar orçamentos.');
+              })
+              .finally(() => {
+                if (active) setIsLoadingQuotes(false);
+              });
+          }
+        })
+        .catch(() => {
+          if (!active) return;
+          setEntitlementStatus({
+            isEntitled: false,
+            hasUserAccess: false,
+            canImport: false,
+            reason: 'Falha ao validar plano e permissões.',
+          });
+          setIsLoadingEntitlement(false);
+        });
+
+      return () => {
+        active = false;
+      };
+    }
+  }, [isNewOrderModalOpen, creationMode, checkOrcagrafEntitlement, listImportableOrcagrafQuotes]);
+
   const handleClose = () => {
     setIsNewOrderModalOpen(false);
+    setCreationMode('manual');
+    setImportedQuoteReference(null);
+    setSellerName(null);
+    setSellerCommissionPct(undefined);
+    setErrorMsg('');
     // Retorno acessível de foco ao elemento acionador
     setTimeout(() => {
       triggerElementRef.current?.focus();
     }, 0);
   };
 
+  const filteredQuotes = useMemo(() => {
+    if (!quoteSearchQuery.trim()) return quotes;
+    const q = quoteSearchQuery.toLowerCase().trim();
+    return quotes.filter(
+      (item) =>
+        item.quoteNumber.toLowerCase().includes(q) ||
+        item.customerName.toLowerCase().includes(q) ||
+        (item.customerDocument && item.customerDocument.includes(q))
+    );
+  }, [quotes, quoteSearchQuery]);
+
   if (!isNewOrderModalOpen) return null;
+
+  const handleSelectQuote = (quote: OrcagrafQuote) => {
+    setImportedQuoteReference(quote.id);
+    setOrderOrigin('ORCAGRAF');
+    setCustomerName(quote.customerName || '');
+    setCustomerDoc(quote.customerDocument || '');
+    setCustomerEmail(quote.customerEmail || '');
+    setCustomerPhone(quote.customerPhone || '');
+    setContactPerson(quote.customerContactPerson || '');
+    setSellerName(quote.sellerName || null);
+    setSellerCommissionPct(quote.sellerCommissionPct);
+
+    if (quote.deliveryDate) {
+      setDeliveryDate(quote.deliveryDate.substring(0, 10));
+    }
+
+    const initialNote = `Importado do OrçaGraf — Orçamento ${quote.quoteNumber}${quote.notes ? `\nObs: ${quote.notes}` : ''}`;
+    setOrderNotes(initialNote);
+
+    if (quote.items && quote.items.length > 0) {
+      const mappedItems: ItemFormState[] = quote.items.map((it) => {
+        const unitPriceStr = (it.unitPriceCents / 100).toFixed(2).replace('.', ',');
+        return {
+          productName: it.productName || 'Item Orçado',
+          category: it.category || '',
+          sector: it.sector || 'Impressão Digital',
+          width: it.width ? String(it.width) : '',
+          height: it.height ? String(it.height) : '',
+          unit: it.unit || 'cm',
+          quantity: String(it.quantity || 1),
+          quantityUnit: it.quantityUnit || 'un',
+          unitPriceStr,
+          finishingsInput: (it.finishings || []).join(', '),
+          technicalNotes: it.technicalNotes || '',
+          priority: 'MEDIUM',
+        };
+      });
+      setItems(mappedItems);
+    }
+
+    // Switch back to review form
+    setCreationMode('manual');
+  };
 
   const handleAddItem = () => {
     setItems((prev) => [...prev, { ...emptyItem }]);
@@ -173,6 +307,9 @@ export const NewOrderModal: React.FC = () => {
 
       await createManualOrder({
         origin: orderOrigin,
+        orcagrafQuoteId: importedQuoteReference || undefined,
+        sellerName: sellerName || undefined,
+        sellerCommissionPct: sellerCommissionPct,
         customer: {
           name: customerName.trim(),
           document: customerDoc.trim() || undefined,
@@ -193,11 +330,14 @@ export const NewOrderModal: React.FC = () => {
       setCustomerPhone('');
       setContactPerson('');
       setOrderNotes('');
+      setImportedQuoteReference(null);
+      setSellerName(null);
+      setSellerCommissionPct(undefined);
       setItems([{ ...emptyItem }]);
 
       handleClose();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Erro ao criar pedido manual.');
+      setErrorMsg(err.message || 'Erro ao criar pedido.');
     } finally {
       setIsSubmitting(false);
     }
@@ -245,367 +385,574 @@ export const NewOrderModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
-          {errorMsg && (
-            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
-              {errorMsg}
+        {/* Mode Selector Tabs */}
+        <div className="flex border-b border-slate-200 bg-slate-100/70 px-6 pt-2">
+          <button
+            type="button"
+            onClick={() => {
+              setCreationMode('manual');
+              if (!importedQuoteReference) setOrderOrigin('MANUAL');
+            }}
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition ${
+              creationMode === 'manual'
+                ? 'border-sky-600 text-sky-700 bg-white rounded-t-lg shadow-xs'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            <span>Preenchimento Manual</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCreationMode('orcagraf')}
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition ${
+              creationMode === 'orcagraf'
+                ? 'border-emerald-600 text-emerald-700 bg-white rounded-t-lg shadow-xs'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Download className="w-4 h-4 text-emerald-600" />
+            <span>Importar do OrçaGraf</span>
+            <span className="rounded bg-emerald-100 px-1.5 py-0.2 text-[10px] font-extrabold text-emerald-800">
+              Aprovados
+            </span>
+          </button>
+        </div>
+
+        {/* Import Banner if quote was loaded */}
+        {importedQuoteReference && creationMode === 'manual' && (
+          <div className="mx-6 mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs text-emerald-900">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <span>
+                Dados carregados do Orçamento OrçaGraf. Você pode revisar e editar os campos antes de salvar.
+              </span>
             </div>
-          )}
-
-          {/* Section 1: Customer Snapshot & Order Details */}
-          <div className="bg-slate-50/70 rounded-xl border border-slate-200 p-4 space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                <Building2 className="w-4 h-4 text-sky-600" />
-                <span>1. Dados do Cliente (Snapshot)</span>
-              </h4>
-
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 font-medium">Origem do Pedido:</span>
-                <select
-                  value={orderOrigin}
-                  onChange={(e) => setOrderOrigin(e.target.value as OrderOrigin)}
-                  className="text-xs px-2 py-1 bg-white border border-slate-300 rounded font-semibold text-slate-800"
-                >
-                  <option value="MANUAL">Manual (Interno)</option>
-                  <option value="ORCAGRAF">OrçaGraf (Contratual)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Nome / Razão Social *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: Alfa Comunicação & Eventos"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  CPF / CNPJ
-                </label>
-                <input
-                  type="text"
-                  placeholder="00.000.000/0000-00"
-                  value={customerDoc}
-                  onChange={(e) => setCustomerDoc(e.target.value)}
-                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  E-mail
-                </label>
-                <input
-                  type="email"
-                  placeholder="contato@cliente.com"
-                  value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
-                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Telefone / WhatsApp
-                </label>
-                <input
-                  type="text"
-                  placeholder="(11) 90000-0000"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Pessoa de Contato
-                </label>
-                <input
-                  type="text"
-                  placeholder="Nome do contato"
-                  value={contactPerson}
-                  onChange={(e) => setContactPerson(e.target.value)}
-                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Prazo de Entrega Geral *
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={deliveryDate}
-                  onChange={(e) => setDeliveryDate(e.target.value)}
-                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
-                />
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setImportedQuoteReference(null);
+                setOrderOrigin('MANUAL');
+                setSellerName(null);
+                setSellerCommissionPct(undefined);
+              }}
+              className="text-[11px] font-bold text-emerald-700 hover:underline"
+            >
+              Desvincular Orçamento
+            </button>
           </div>
+        )}
 
-          {/* Section 2: Order Items (1 Item = 1 OP) */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                <Package className="w-4 h-4 text-sky-600" />
-                <span>2. Itens do Pedido ({items.length} {items.length === 1 ? 'item' : 'itens'})</span>
-              </h4>
+        {/* Content switch */}
+        {creationMode === 'orcagraf' ? (
+          /* OrçaGraf Import Selector View */
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            {isLoadingEntitlement ? (
+              <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-500 text-xs">
+                <Loader2 className="w-6 h-6 animate-spin text-sky-600" />
+                <span>Validando autorização de integração OrçaGraf + ArteFlow...</span>
+              </div>
+            ) : !entitlementStatus?.canImport ? (
+              /* Informative state when organization does NOT have dual entitlement */
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-6 text-center space-y-3">
+                <AlertCircle className="w-10 h-10 text-amber-600 mx-auto" />
+                <div>
+                  <h4 className="text-sm font-bold text-amber-900">
+                    Integração OrçaGraf Indisponível
+                  </h4>
+                  <p className="mt-1 text-xs text-amber-800 max-w-md mx-auto">
+                    Disponível para organizações com <strong>OrçaGraf + ArteFlow</strong> ativos e acesso individual habilitado.
+                  </p>
+                </div>
+                {config.prexyonPortalUrl && (
+                  <div className="pt-2">
+                    <a
+                      href={config.prexyonPortalUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-500 transition"
+                    >
+                      <span>Gerenciar Assinatura no Portal Prexyon</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Quote List for Import */
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800">
+                      Selecione um Orçamento Aprovado do OrçaGraf
+                    </h4>
+                    <p className="text-xs text-slate-500">
+                      Somente orçamentos com status <strong>Aprovado</strong> e ainda não importados para o ArteFlow.
+                    </p>
+                  </div>
+                  <div className="relative w-64">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Filtrar por número ou cliente..."
+                      value={quoteSearchQuery}
+                      onChange={(e) => setQuoteSearchQuery(e.target.value)}
+                      className="w-full text-xs pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
 
-              <button
-                type="button"
-                onClick={handleAddItem}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 rounded-lg border border-sky-200 transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Adicionar Item</span>
-              </button>
+                {isLoadingQuotes ? (
+                  <div className="py-10 flex flex-col items-center justify-center gap-2 text-slate-500 text-xs">
+                    <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+                    <span>Carregando orçamentos aprovados...</span>
+                  </div>
+                ) : filteredQuotes.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-slate-500 text-xs">
+                    Nenhum orçamento aprovado pendente de importação encontrado no OrçaGraf.
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {filteredQuotes.map((quote) => (
+                      <div
+                        key={quote.id}
+                        className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs hover:border-emerald-400 transition flex items-center justify-between gap-4"
+                      >
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                              {quote.quoteNumber}
+                            </span>
+                            <span className="font-bold text-sm text-slate-900 truncate">
+                              {quote.customerName}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 truncate">
+                            {quote.itemCount} item(s) • Entrega prevista:{' '}
+                            {quote.deliveryDate ? new Date(quote.deliveryDate).toLocaleDateString('pt-BR') : 'Não informada'}
+                            {quote.sellerName ? ` • Vendedor: ${quote.sellerName}` : ''}
+                          </p>
+                        </div>
+
+                        <div className="text-right flex-shrink-0 flex items-center gap-4">
+                          <div>
+                            <span className="block text-xs font-bold text-slate-900 font-mono">
+                              {formatCentsToBRL(quote.totalAmountCents)}
+                            </span>
+                            <span className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">
+                              Aprovado
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectQuote(quote)}
+                            className="rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-500 transition shadow-xs flex items-center gap-1.5"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Carregar Dados</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Form Body */
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+            {errorMsg && (
+              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
+                {errorMsg}
+              </div>
+            )}
+
+            {/* Section 1: Customer Snapshot & Order Details */}
+            <div className="bg-slate-50/70 rounded-xl border border-slate-200 p-4 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <Building2 className="w-4 h-4 text-sky-600" />
+                  <span>1. Dados do Cliente (Snapshot)</span>
+                </h4>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 font-medium">Origem do Pedido:</span>
+                  <select
+                    aria-label="Origem do Pedido"
+                    data-testid="order-origin-select"
+                    value={orderOrigin}
+                    onChange={(e) => setOrderOrigin(e.target.value as OrderOrigin)}
+                    className="text-xs px-2 py-1 bg-white border border-slate-300 rounded font-semibold text-slate-800"
+                  >
+                    <option value="MANUAL">Manual (Interno)</option>
+                    <option value="ORCAGRAF">OrçaGraf (Integrado)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Nome / Razão Social *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: Alfa Comunicação & Eventos"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    CPF / CNPJ
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="00.000.000/0000-00"
+                    value={customerDoc}
+                    onChange={(e) => setCustomerDoc(e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    E-mail
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="contato@cliente.com"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Telefone / WhatsApp
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="(00) 00000-0000"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Pessoa de Contato
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Juliana Silva"
+                    value={contactPerson}
+                    onChange={(e) => setContactPerson(e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Data de Entrega Prometida *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={deliveryDate}
+                    onChange={(e) => setDeliveryDate(e.target.value)}
+                    className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                  />
+                </div>
+              </div>
             </div>
 
-            {items.map((item, index) => {
-              const calc = calculatedItems[index];
+            {/* Section 2: Items & Production Jobs */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <Package className="w-4 h-4 text-sky-600" />
+                  <span>2. Itens do Pedido ({items.length})</span>
+                </h4>
 
-              return (
-                <div
-                  key={index}
-                  className="p-4 rounded-xl border border-slate-200 bg-white shadow-2xs space-y-3 relative group"
+                <button
+                  type="button"
+                  onClick={handleAddItem}
+                  className="px-3 py-1.5 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition-colors flex items-center gap-1.5"
                 >
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <span className="text-xs font-bold text-slate-800">
-                      Item #{index + 1} — Gerará OP independente
-                    </span>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Adicionar Item</span>
+                </button>
+              </div>
 
-                    {items.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveItem(index)}
-                        className="text-xs text-red-500 hover:text-red-700 inline-flex items-center gap-1"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Remover</span>
-                      </button>
-                    )}
-                  </div>
+              {items.map((item, index) => {
+                const itemCalc = calculatedItems[index];
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        Nome do Produto / Trabalho *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Ex: Cartão de Visita 4x4 Couché 300g"
-                        value={item.productName}
-                        onChange={(e) => handleItemChange(index, 'productName', e.target.value)}
-                        className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
-                      />
-                    </div>
+                return (
+                  <div
+                    key={index}
+                    className="bg-white rounded-xl border border-slate-200 shadow-xs p-4 space-y-3 relative transition-all"
+                  >
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-[10px]">
+                          #{index + 1}
+                        </span>
+                        <span>Item & Ordem de Produção #{index + 1}</span>
+                      </span>
 
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        Setor Produtivo
-                      </label>
-                      <select
-                        value={item.sector}
-                        onChange={(e) => handleItemChange(index, 'sector', e.target.value)}
-                        className="w-full text-xs px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:outline-none"
-                      >
-                        {SECTORS.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-mono font-bold text-slate-700">
+                          Total: {formatCentsToBRL(itemCalc.itemTotalCents)}
+                        </span>
 
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        Prioridade da OP
-                      </label>
-                      <select
-                        value={item.priority}
-                        onChange={(e) => handleItemChange(index, 'priority', e.target.value as Priority)}
-                        className="w-full text-xs px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:outline-none"
-                      >
-                        <option value="LOW">Baixa</option>
-                        <option value="MEDIUM">Média</option>
-                        <option value="HIGH">Alta</option>
-                        <option value="URGENT">Urgente</option>
-                      </select>
-                    </div>
-
-                    {/* Dimensões e Quantidades */}
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        Largura x Altura
-                      </label>
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="number"
-                          placeholder="Larg"
-                          value={item.width}
-                          onChange={(e) => handleItemChange(index, 'width', e.target.value)}
-                          className="w-1/2 text-xs px-2 py-1.5 bg-slate-50 border border-slate-300 rounded"
-                        />
-                        <span className="text-slate-400 text-xs">x</span>
-                        <input
-                          type="number"
-                          placeholder="Alt"
-                          value={item.height}
-                          onChange={(e) => handleItemChange(index, 'height', e.target.value)}
-                          className="w-1/2 text-xs px-2 py-1.5 bg-slate-50 border border-slate-300 rounded"
-                        />
-                        <select
-                          value={item.unit}
-                          onChange={(e) => handleItemChange(index, 'unit', e.target.value as any)}
-                          className="text-xs px-1 py-1.5 bg-slate-50 border border-slate-300 rounded"
-                        >
-                          <option value="cm">cm</option>
-                          <option value="mm">mm</option>
-                          <option value="m">m</option>
-                        </select>
+                        {items.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveItem(index)}
+                            aria-label={`Remover item #${index + 1}`}
+                            className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        Quantidade
-                      </label>
-                      <div className="flex items-center gap-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Nome do Produto / Serviço *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ex: Cartão de Visita 4x4 Couché 300g"
+                          value={item.productName}
+                          onChange={(e) => handleItemChange(index, 'productName', e.target.value)}
+                          className="w-full text-xs px-3 py-1.5 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Categoria
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ex: Comunicação Visual"
+                          value={item.category}
+                          onChange={(e) => handleItemChange(index, 'category', e.target.value)}
+                          className="w-full text-xs px-3 py-1.5 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Setor Produtivo
+                        </label>
+                        <select
+                          value={item.sector}
+                          onChange={(e) => handleItemChange(index, 'sector', e.target.value)}
+                          className="w-full text-xs px-3 py-1.5 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:outline-none"
+                        >
+                          {SECTORS.map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Quantidade *
+                        </label>
                         <input
                           type="number"
                           min="1"
                           required
                           value={item.quantity}
                           onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                          className="w-2/3 text-xs px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded"
+                          className="w-full text-xs px-3 py-1.5 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:outline-none"
                         />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Unidade
+                        </label>
                         <input
                           type="text"
-                          placeholder="un"
+                          placeholder="un, m², cento"
                           value={item.quantityUnit}
                           onChange={(e) => handleItemChange(index, 'quantityUnit', e.target.value)}
-                          className="w-1/3 text-xs px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded text-center"
+                          className="w-full text-xs px-3 py-1.5 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Preço Unitário (R$)
+                        </label>
+                        <input
+                          type="text"
+                          value={item.unitPriceStr}
+                          onChange={(e) => handleItemChange(index, 'unitPriceStr', e.target.value)}
+                          className="w-full text-xs px-3 py-1.5 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:outline-none text-right font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Prioridade
+                        </label>
+                        <select
+                          value={item.priority}
+                          onChange={(e) => handleItemChange(index, 'priority', e.target.value as Priority)}
+                          className="w-full text-xs px-3 py-1.5 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:outline-none"
+                        >
+                          <option value="LOW">Baixa</option>
+                          <option value="MEDIUM">Média</option>
+                          <option value="HIGH">Alta</option>
+                          <option value="URGENT">Urgente</option>
+                        </select>
+                      </div>
+
+                      {/* Dimensions Row */}
+                      <div className="sm:col-span-2 grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                            Largura
+                          </label>
+                          <input
+                            type="number"
+                            step="any"
+                            placeholder="0.00"
+                            value={item.width}
+                            onChange={(e) => handleItemChange(index, 'width', e.target.value)}
+                            className="w-full text-xs px-2 py-1.5 bg-slate-50 border border-slate-300 rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                            Altura
+                          </label>
+                          <input
+                            type="number"
+                            step="any"
+                            placeholder="0.00"
+                            value={item.height}
+                            onChange={(e) => handleItemChange(index, 'height', e.target.value)}
+                            className="w-full text-xs px-2 py-1.5 bg-slate-50 border border-slate-300 rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                            Unidade Dim.
+                          </label>
+                          <select
+                            value={item.unit}
+                            onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
+                            className="w-full text-xs px-2 py-1.5 bg-slate-50 border border-slate-300 rounded"
+                          >
+                            <option value="cm">cm</option>
+                            <option value="mm">mm</option>
+                            <option value="m">m</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                          Acabamentos (separar por vírgula)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ilhós reforçado, Bainha soldada"
+                          value={item.finishingsInput}
+                          onChange={(e) => handleItemChange(index, 'finishingsInput', e.target.value)}
+                          className="w-full text-xs px-3 py-1.5 bg-slate-50 border border-slate-300 rounded"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-4">
+                        <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                          Observações Técnicas de Produção
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Sangria de 2mm, resolução 300dpi, etc."
+                          value={item.technicalNotes}
+                          onChange={(e) => handleItemChange(index, 'technicalNotes', e.target.value)}
+                          className="w-full text-xs px-3 py-1.5 bg-slate-50 border border-slate-300 rounded"
                         />
                       </div>
                     </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        Preço Unitário (R$)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="0,00"
-                        value={item.unitPriceStr}
-                        onChange={(e) => handleItemChange(index, 'unitPriceStr', e.target.value)}
-                        className="w-full text-xs px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        Subtotal do Item
-                      </label>
-                      <div className="text-xs font-bold text-slate-900 py-1.5">
-                        {formatCentsToBRL(calc.itemTotalCents)}
-                      </div>
-                    </div>
-
-                    {/* Acabamentos e Notas */}
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        Acabamentos (separados por vírgula)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ex: Laminação Fosca, Verniz Localizado, Refile"
-                        value={item.finishingsInput}
-                        onChange={(e) => handleItemChange(index, 'finishingsInput', e.target.value)}
-                        className="w-full text-xs px-3 py-1.5 bg-slate-50 border border-slate-300 rounded"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        Observações Técnicas para Produção
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ex: Sangria 2mm, conferir gabarito do facão"
-                        value={item.technicalNotes}
-                        onChange={(e) => handleItemChange(index, 'technicalNotes', e.target.value)}
-                        className="w-full text-xs px-3 py-1.5 bg-slate-50 border border-slate-300 rounded"
-                      />
-                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Observations & Total Summary */}
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="w-full sm:w-1/2">
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Observações Gerais do Pedido
-              </label>
-              <textarea
-                rows={2}
-                placeholder="Instruções de entrega, condições comerciais, etc."
-                value={orderNotes}
-                onChange={(e) => setOrderNotes(e.target.value)}
-                className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none"
-              />
+                );
+              })}
             </div>
 
-            <div className="text-right sm:self-end">
-              <span className="text-xs text-slate-500 font-medium block">
-                Valor Total do Pedido:
-              </span>
-              <span className="text-xl font-black text-slate-900 font-mono">
-                {formatCentsToBRL(totalOrderCents)}
-              </span>
-              <span className="text-[10px] text-slate-400 block mt-0.5">
-                Calculado em centavos inteiros ({totalOrderCents}¢)
-              </span>
+            {/* Observations & Total Summary */}
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="w-full sm:w-1/2">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Observações Gerais do Pedido
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Instruções de entrega, condições comerciais, etc."
+                  value={orderNotes}
+                  onChange={(e) => setOrderNotes(e.target.value)}
+                  className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none"
+                />
+              </div>
+
+              <div className="text-right sm:self-end">
+                <span className="text-xs text-slate-500 font-medium block">
+                  Valor Total do Pedido:
+                </span>
+                <span className="text-xl font-black text-slate-900 font-mono">
+                  {formatCentsToBRL(totalOrderCents)}
+                </span>
+                <span className="text-[10px] text-slate-400 block mt-0.5">
+                  Calculado em centavos inteiros ({totalOrderCents}¢)
+                </span>
+              </div>
             </div>
-          </div>
-        </form>
+          </form>
+        )}
 
         {/* Footer Actions */}
-        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/80 flex items-center justify-end gap-3 flex-shrink-0">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg transition-colors"
-          >
-            Cancelar
-          </button>
+        {creationMode === 'manual' && (
+          <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/80 flex items-center justify-end gap-3 flex-shrink-0">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
 
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="px-5 py-2 text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 active:bg-sky-800 disabled:opacity-50 rounded-lg shadow-sm transition-all flex items-center gap-2"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>{isSubmitting ? 'Gerando OPs...' : 'Salvar Pedido & Gerar OPs'}</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="px-5 py-2 text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 active:bg-sky-800 disabled:opacity-50 rounded-lg shadow-sm transition-all flex items-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>{isSubmitting ? 'Gerando OPs...' : 'Salvar Pedido & Gerar OPs'}</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

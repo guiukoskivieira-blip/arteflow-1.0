@@ -25,8 +25,10 @@ export interface OrcagrafQuote {
   totalAmountCents: number;
   deliveryDate?: string;
   notes?: string;
+  sellerId?: string;
   sellerName?: string;
   sellerCommissionPct?: number;
+  sellerCommissionAmountCents?: number;
   approvedAt?: string;
   itemCount: number;
   items: OrcagrafQuoteItem[];

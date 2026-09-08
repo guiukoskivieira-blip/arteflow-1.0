@@ -164,18 +164,16 @@ describe('SupabaseOrderRepository', () => {
       expect(singleOrder?.origin).toBe('ORCAGRAF');
       expect(singleOrder?.orcagrafQuoteId).toBe('quote-123');
 
-      // Verificar que seller_name e comissões NÃO estão no SELECT
-      expect(selectedColumns).not.toContain('seller_name');
-      expect(selectedColumns).not.toContain('seller_id');
-      expect(selectedColumns).not.toContain('seller_commission_pct');
-      expect(selectedColumns).not.toContain('commission');
-
-      // Verificar que colunas canônicas e orcagraf_quote_id ESTÃO no SELECT
+      // Verificar que colunas canônicas, orcagraf_quote_id, seller e comissão ESTÃO no SELECT (P2-03)
       expect(selectedColumns).toContain('id');
       expect(selectedColumns).toContain('organization_id');
       expect(selectedColumns).toContain('order_number');
       expect(selectedColumns).toContain('origin');
       expect(selectedColumns).toContain('orcagraf_quote_id');
+      expect(selectedColumns).toContain('seller_id');
+      expect(selectedColumns).toContain('seller_name');
+      expect(selectedColumns).toContain('commission_rate_percent');
+      expect(selectedColumns).toContain('commission_amount_cents');
     });
   });
 });

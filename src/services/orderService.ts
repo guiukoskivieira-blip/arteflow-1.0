@@ -31,8 +31,10 @@ export interface CreateManualOrderInput {
   organizationId: string;
   origin?: OrderOrigin;
   orcagrafQuoteId?: string;
+  sellerId?: string;
   sellerName?: string;
   sellerCommissionPct?: number;
+  sellerCommissionAmountCents?: number;
   customer: Omit<CustomerSnapshot, 'id'> & { id?: string };
   items: CreateManualOrderItemInput[];
   notes?: string;
@@ -201,8 +203,10 @@ export class OrderService {
       status: 'IN_PRODUCTION',
       notes: notes?.trim() || undefined,
       orcagrafQuoteId: input.orcagrafQuoteId?.trim() || undefined,
+      sellerId: input.sellerId?.trim() || undefined,
       sellerName: input.sellerName?.trim() || undefined,
       sellerCommissionPct: input.sellerCommissionPct,
+      sellerCommissionAmountCents: input.sellerCommissionAmountCents,
       deliveryDateISO: deliveryDateISO || nowISO,
       createdAt: nowISO,
       updatedAt: nowISO,

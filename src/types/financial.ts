@@ -36,6 +36,8 @@ export interface FinancialPayable {
   organizationId: string;
   purchaseOrderId: string | null;
   purchaseOrderNumber: string | null;
+  orderId?: string | null;
+  commissionSellerId?: string | null;
   supplierId: string | null;
   supplierName: string;
   description: string;

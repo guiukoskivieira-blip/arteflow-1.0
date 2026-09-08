@@ -37,6 +37,10 @@ interface OrderRow {
   total_amount_cents: number | string;
   notes: string | null;
   orcagraf_quote_id?: string | null;
+  seller_id?: string | null;
+  seller_name?: string | null;
+  commission_rate_percent?: number | string | null;
+  commission_amount_cents?: number | string | null;
   delivery_date: string;
   created_at: string;
   updated_at: string;
@@ -48,7 +52,7 @@ const ORDER_SELECT = `
   id, organization_id, order_number, origin, status,
   customer_snapshot_id, customer_name, customer_document, customer_email,
   customer_phone, customer_contact_person, total_amount_cents, notes,
-  orcagraf_quote_id,
+  orcagraf_quote_id, seller_id, seller_name, commission_rate_percent, commission_amount_cents,
   delivery_date, created_at, updated_at, data_origin,
   arteflow_order_items (
     id, order_id, product_name, category, sector,
@@ -106,6 +110,14 @@ function mapOrder(row: OrderRow): Order {
     status: row.status,
     notes: row.notes ?? undefined,
     orcagrafQuoteId: row.orcagraf_quote_id ?? undefined,
+    sellerId: row.seller_id ?? undefined,
+    sellerName: row.seller_name ?? undefined,
+    sellerCommissionPct: row.commission_rate_percent !== null && row.commission_rate_percent !== undefined
+      ? Number(row.commission_rate_percent)
+      : undefined,
+    sellerCommissionAmountCents: row.commission_amount_cents !== null && row.commission_amount_cents !== undefined
+      ? safeInteger(row.commission_amount_cents, 'commission_amount_cents')
+      : undefined,
     deliveryDateISO: row.delivery_date,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -191,6 +203,10 @@ export class SupabaseOrderRepository implements IOrderRepository {
       p_notes: order.notes ?? null,
       p_delivery_date: order.deliveryDateISO,
       p_orcagraf_quote_id: order.orcagrafQuoteId ?? null,
+      p_seller_id: order.sellerId ?? null,
+      p_seller_name: order.sellerName ?? null,
+      p_commission_rate_percent: order.sellerCommissionPct ?? null,
+      p_commission_amount_cents: order.sellerCommissionAmountCents ?? null,
     });
     if (error) {
       const msg = error.message || '';

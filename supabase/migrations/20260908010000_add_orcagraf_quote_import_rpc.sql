@@ -9,7 +9,7 @@ create unique index if not exists arteflow_orders_org_orcagraf_quote_uidx
   on public.arteflow_orders (organization_id, orcagraf_quote_id)
   where orcagraf_quote_id is not null;
 
--- 2. Função segura para checar duplo entitlement e duplo acesso a produtos
+-- 2. Função segura para checar duplo entitlement, duplo acesso a produtos e permissão RBAC OrçaGraf
 create or replace function private.arteflow_can_import_orcagraf(p_organization_id uuid)
 returns boolean
 language sql
@@ -42,6 +42,65 @@ as $$
       where o.id = p_organization_id
         and o.is_active = true
         and o.deleted_at is null
+        and (
+          -- Owner possui bypass canônico de role (mas respeita entitlement, product_access e tenant acima)
+          om.role = 'owner'::public.user_role
+          or (
+            -- Não ter explicit deny para quotes.view no OrçaGraf
+            not exists (
+              select 1
+              from public.prexyon_user_permission_overrides denial
+              join public.prexyon_permission_definitions denial_def
+                on denial_def.id = denial.permission_definition_id
+              where denial.organization_id = p_organization_id
+                and denial.user_id = (select auth.uid())
+                and denial.effect = 'deny'
+                and denial_def.product_code = 'orcagraf'
+                and denial_def.permission_key in ('orcagraf.quotes.view', 'quotes.view')
+            )
+            and (
+              -- Permissão direta legada / product_permissions
+              exists (
+                select 1
+                from public.product_permissions perm
+                where perm.organization_id = p_organization_id
+                  and perm.user_id = (select auth.uid())
+                  and perm.product_key = 'orcagraf'
+                  and perm.permission_key in ('orcagraf.quotes.view', 'quotes.view')
+                  and perm.is_granted = true
+              )
+              -- Override allow no RBAC Prexyon
+              or exists (
+                select 1
+                from public.prexyon_user_permission_overrides allowance
+                join public.prexyon_permission_definitions allowance_def
+                  on allowance_def.id = allowance.permission_definition_id
+                where allowance.organization_id = p_organization_id
+                  and allowance.user_id = (select auth.uid())
+                  and allowance.effect = 'allow'
+                  and allowance_def.product_code = 'orcagraf'
+                  and allowance_def.permission_key in ('orcagraf.quotes.view', 'quotes.view')
+              )
+              -- Role assignment no produto OrçaGraf
+              or exists (
+                select 1
+                from public.prexyon_user_product_roles assignment
+                join public.prexyon_roles role_def
+                  on role_def.id = assignment.role_id
+                 and role_def.product_code = 'orcagraf'
+                join public.prexyon_role_permissions role_perm
+                  on role_perm.role_id = assignment.role_id
+                join public.prexyon_permission_definitions def
+                  on def.id = role_perm.permission_definition_id
+                 and def.product_code = 'orcagraf'
+                where assignment.organization_id = p_organization_id
+                  and assignment.user_id = (select auth.uid())
+                  and assignment.product_code = 'orcagraf'
+                  and def.permission_key in ('orcagraf.quotes.view', 'quotes.view')
+              )
+            )
+          )
+        )
     )
     -- Entitlement efetivo ArteFlow
     and (

@@ -136,7 +136,7 @@ describe('P2-01 — Importação de Orçamento Aprovado do OrçaGraf com Dual En
       expect(res.reason).toMatch(/usuário não possui acesso individual ao ArteFlow/i);
     });
 
-    it('H & I. Usuário com ambos acessos e organização correta obtém canImport: true', async () => {
+    it('H. Usuário com dual product_access mas SEM permissão orcagraf.quotes.view recebe canImport: false', async () => {
       const mockSupabase = {
         rpc: vi.fn().mockImplementation((name: string) => {
           if (name === 'prexyon_get_organization_entitlements') {
@@ -161,6 +161,110 @@ describe('P2-01 — Importação de Orçamento Aprovado do OrçaGraf com Dual En
                         ],
                         error: null,
                       }),
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'organization_members') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  eq: () => ({
+                    eq: () => ({
+                      eq: () => ({
+                        maybeSingle: () => Promise.resolve({ data: { role: 'member' }, error: null }),
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'product_permissions') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  eq: () => ({
+                    eq: () => ({
+                      in: () => ({
+                        eq: () => ({
+                          maybeSingle: () => Promise.resolve({ data: null, error: null }),
+                        }),
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            };
+          }
+          return { select: () => ({ eq: () => Promise.resolve({ data: [], error: null }) }) };
+        }),
+      } as any;
+
+      const service = new OrcagrafIntegrationService(mockSupabase);
+      const res = await service.checkIntegrationEntitlement('org-1', 'user-1');
+      expect(res.canImport).toBe(false);
+      expect(res.reason).toMatch(/não possui permissão no OrçaGraf para visualizar orçamentos/i);
+    });
+
+    it('I. Usuário com dual product_access e permissão orcagraf.quotes.view obtém canImport: true', async () => {
+      const mockSupabase = {
+        rpc: vi.fn().mockImplementation((name: string) => {
+          if (name === 'prexyon_get_organization_entitlements') {
+            return Promise.resolve({
+              data: [{ is_entitled: true, effective_products: ['orcagraf', 'arteflow'] }],
+              error: null,
+            });
+          }
+          return Promise.resolve({ data: null, error: null });
+        }),
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === 'organization_member_product_access') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  eq: () => ({
+                    in: () =>
+                      Promise.resolve({
+                        data: [
+                          { product_code: 'orcagraf', is_enabled: true },
+                          { product_code: 'arteflow', is_enabled: true },
+                        ],
+                        error: null,
+                      }),
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'organization_members') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  eq: () => ({
+                    eq: () => ({
+                      eq: () => ({
+                        maybeSingle: () => Promise.resolve({ data: { role: 'member' }, error: null }),
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'product_permissions') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  eq: () => ({
+                    eq: () => ({
+                      in: () => ({
+                        eq: () => ({
+                          maybeSingle: () => Promise.resolve({ data: { is_granted: true }, error: null }),
+                        }),
+                      }),
+                    }),
                   }),
                 }),
               }),

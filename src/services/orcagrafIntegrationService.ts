@@ -89,6 +89,39 @@ export class OrcagrafIntegrationService {
         };
       }
 
+      // Check user RBAC permission for OrçaGraf (quotes.view or owner role)
+      const { data: member } = await this.supabase
+        .from('organization_members')
+        .select('role')
+        .eq('organization_id', organizationId)
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .eq('is_locked', false)
+        .maybeSingle();
+
+      const isOwner = member?.role === 'owner';
+      if (!isOwner) {
+        // Check product permissions / overrides
+        const { data: perm } = await this.supabase
+          .from('product_permissions')
+          .select('is_granted')
+          .eq('organization_id', organizationId)
+          .eq('user_id', userId)
+          .eq('product_key', 'orcagraf')
+          .in('permission_key', ['orcagraf.quotes.view', 'quotes.view'])
+          .eq('is_granted', true)
+          .maybeSingle();
+
+        if (!perm) {
+          return {
+            isEntitled: true,
+            hasUserAccess: false,
+            canImport: false,
+            reason: 'O usuário não possui permissão no OrçaGraf para visualizar orçamentos.',
+          };
+        }
+      }
+
       return {
         isEntitled: true,
         hasUserAccess: true,

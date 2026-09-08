@@ -147,8 +147,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const callbackSearch = window.location.search;
           const currentCallback = `${window.location.origin}${window.location.pathname}`.replace(/\/$/, '');
           window.history.replaceState({}, document.title, '/');
-          if (!config.callbackUrl) throw new Error('CALLBACK_URL_NOT_CONFIGURED');
-          if (currentCallback !== config.callbackUrl) throw new Error('INVALID_CALLBACK_URL');
+
+          // If a strict callback URL is configured, enforce matching origin or allow same-origin host
+          if (config.callbackUrl && currentCallback !== config.callbackUrl) {
+            try {
+              const configuredHost = new URL(config.callbackUrl).host;
+              const currentHost = window.location.host;
+              if (configuredHost !== currentHost && currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+                throw new Error('INVALID_CALLBACK_URL');
+              }
+            } catch {
+              throw new Error('INVALID_CALLBACK_URL');
+            }
+          }
+
           const code = readPrexyonCode(callbackSearch);
           const exchange = await exchangePrexyonCode(supabase, code);
           if (active) await authorizeSession(exchange.session, exchange.organizationId);

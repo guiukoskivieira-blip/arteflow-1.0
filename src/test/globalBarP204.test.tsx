@@ -165,7 +165,7 @@ describe('Global Bar P2-04 Tests & Hotfix Verification', () => {
     expect(logoLink).toHaveAttribute('href', 'https://portal.prexyon.test');
 
     const logoImg = screen.getByAltText('Prexyon');
-    expect(logoImg).toHaveAttribute('src', '/brand/prexyon-color.png');
+    expect(logoImg).toHaveAttribute('src', '/brand/prexyon-white.png');
   });
 
   it('F. Central de Ajuda renderiza botão na Global Bar para acionar modal interno', () => {

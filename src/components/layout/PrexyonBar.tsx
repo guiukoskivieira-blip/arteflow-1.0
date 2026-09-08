@@ -176,12 +176,12 @@ export const PrexyonBar: React.FC = () => {
         <a
           href={config.prexyonPortalUrl || '#'}
           onClick={handlePortalClick}
-          className="group flex items-center rounded-lg bg-white px-2 py-1 transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+          className="group flex items-center rounded-lg transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
           title="Ir para o Portal Prexyon"
           aria-label="Portal Prexyon"
         >
           <img
-            src="/brand/prexyon-color.png"
+            src="/brand/prexyon-white.png"
             alt="Prexyon"
             className="h-7 w-[120px] object-contain object-left sm:h-8 sm:w-[138px]"
           />

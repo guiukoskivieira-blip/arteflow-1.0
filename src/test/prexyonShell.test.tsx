@@ -8,7 +8,7 @@ describe('Shell visual Prexyon e ArteFlow', () => {
   it('renderiza as marcas oficiais e preserva o aplicativo ativo', async () => {
     render(<App />);
 
-    expect(await screen.findByAltText('Prexyon')).toHaveAttribute('src', '/brand/prexyon-color.png');
+    expect(await screen.findByAltText('Prexyon')).toHaveAttribute('src', '/brand/prexyon-white.png');
     expect(screen.getByAltText('ArteFlow — Gestão da Produção')).toHaveAttribute('src', '/brand/arteflow-white.png');
     expect(screen.getByRole('button', { name: /produto selecionado: arteflow/i })).toHaveAttribute('aria-expanded', 'false');
   });

@@ -209,6 +209,9 @@ interface ArteFlowContextType {
   prefillRequestItem: PrefillRequestItemData | null;
   setPrefillRequestItem: (data: PrefillRequestItemData | null) => void;
 
+  isHelpModalOpen: boolean;
+  setIsHelpModalOpen: (open: boolean) => void;
+
   viewMode: 'kanban' | 'list';
   setViewMode: (mode: 'kanban' | 'list') => void;
   activePage: AppPage;
@@ -388,6 +391,7 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
   const [isPurchaseOrderDetailDrawerOpen, setIsPurchaseOrderDetailDrawerOpen] = useState(false);
   const [isRecordReceiptModalOpen, setIsRecordReceiptModalOpen] = useState(false);
   const [prefillRequestItem, setPrefillRequestItem] = useState<PrefillRequestItemData | null>(null);
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
 
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [activePage, setActivePage] = useState<AppPage>('production');
@@ -1530,6 +1534,9 @@ export const ArteFlowProvider: React.FC<ArteFlowProviderProps> = ({
         setIsRecordReceiptModalOpen,
         prefillRequestItem,
         setPrefillRequestItem,
+
+        isHelpModalOpen,
+        setIsHelpModalOpen,
 
         viewMode,
         setViewMode,

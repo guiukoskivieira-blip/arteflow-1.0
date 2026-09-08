@@ -168,7 +168,7 @@ describe('Global Bar P2-04 Tests & Hotfix Verification', () => {
     expect(logoImg).toHaveAttribute('src', '/brand/prexyon-color.png');
   });
 
-  it('F. Central de Ajuda direciona para o Portal Prexyon', () => {
+  it('F. Central de Ajuda renderiza botão na Global Bar para acionar modal interno', () => {
     renderPrexyonBar({
       mode: 'connected',
       isDev: false,
@@ -183,8 +183,8 @@ describe('Global Bar P2-04 Tests & Hotfix Verification', () => {
       callbackUrl: 'https://arteflow.prexyon.test/auth/prexyon',
     });
 
-    const helpLink = screen.getByRole('link', { name: /central de ajuda prexyon/i });
-    expect(helpLink).toHaveAttribute('href', 'https://portal.prexyon.test');
+    const helpBtn = screen.getByRole('button', { name: /central de ajuda arteflow/i });
+    expect(helpBtn).toBeInTheDocument();
   });
 
   it('G. Avatar abre menu de usuário com dados e botão de logout', () => {

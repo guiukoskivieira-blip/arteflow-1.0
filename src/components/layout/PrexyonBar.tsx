@@ -54,7 +54,7 @@ function getInitials(name?: string): string {
 export const PrexyonBar: React.FC = () => {
   const config = useMemo(() => getArteFlowRuntimeConfig(), []);
   const auth = useOptionalAuth();
-  const { organization, currentUser } = useArteFlow();
+  const { organization, currentUser, setIsHelpModalOpen } = useArteFlow();
 
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -292,16 +292,16 @@ export const PrexyonBar: React.FC = () => {
       {/* Right: Help Center & User Avatar Menu */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Help Center */}
-        <a
-          href={config.prexyonPortalUrl || '#'}
-          onClick={handlePortalClick}
-          aria-label="Central de Ajuda Prexyon"
-          title="Central de Ajuda Prexyon"
+        <button
+          type="button"
+          onClick={() => setIsHelpModalOpen(true)}
+          aria-label="Central de Ajuda ArteFlow"
+          title="Central de Ajuda ArteFlow"
           className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-white/10 hover:text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
         >
           <HelpCircle className="h-5 w-5 text-slate-300" />
           <span className="hidden lg:inline">Ajuda</span>
-        </a>
+        </button>
 
         {/* User Avatar with Dropdown Menu */}
         <div className="relative" ref={userMenuRef}>

@@ -433,4 +433,62 @@ describe('Hotfix P1-01: Cenários de Validação Obrigatórios (A - G)', () => {
       expect(p2Migration).toContain('insert into public.arteflow_production_job_events');
     });
   });
+
+  describe('Hotfix P2-02: Etapa Inicial Dinâmica por Item (1 - 13)', () => {
+    const p202Migration = readFileSync(
+      'supabase/migrations/20260908040000_dynamic_initial_stage_resolution.sql',
+      'utf8'
+    );
+
+    it('1. SQL Migration remove literal stage-entry do fluxo operacional e usa stages ativas', () => {
+      expect(p202Migration).not.toContain("'stage-entry'");
+      expect(p202Migration).toContain('from public.arteflow_production_stages');
+      expect(p202Migration).toContain('is_active = true');
+    });
+
+    it('2, 3, 4, 5, 6, 7. Resolução de fallback por is_initial, sequence e falha segura', () => {
+      expect(p202Migration).toContain('case when is_initial = true then 0 else 1 end');
+      expect(p202Migration).toContain('sequence asc');
+      expect(p202Migration).toContain('Nenhuma etapa de produção ativa está configurada para esta organização.');
+      expect(p202Migration).toContain('INVALID_STAGE');
+    });
+
+    it('8 & 9. Itens distintos podem enviar stages iniciais diferentes via OrderService / Repository', async () => {
+      const rpc = vi.fn().mockResolvedValue({
+        data: { id: orderId, order_number: 'PED-2026-0003' },
+        error: null,
+      });
+      const orderRepo = new SupabaseOrderRepository({ rpc } as unknown as SupabaseClient);
+      const jobRepo = { list: vi.fn().mockResolvedValue([]), listByOrderId: vi.fn(), saveMany: vi.fn() };
+      const eventRepo = { appendMany: vi.fn() };
+      const orderService = new OrderService(orderRepo, jobRepo as any, eventRepo as any);
+
+      await orderService.createManualOrder({
+        organizationId: orgA,
+        origin: 'MANUAL',
+        customer: { name: 'Cliente Multi-Stage' },
+        items: [
+          { productName: 'Item A', sector: 'Digital', unit: 'cm', quantity: 1, unitPriceCents: 100, finishings: [], initialStageId: 'stage-prepress' },
+          { productName: 'Item B', sector: 'Digital', unit: 'cm', quantity: 1, unitPriceCents: 200, finishings: [], initialStageId: 'stage-scheduled' },
+        ],
+        deliveryDateISO: '2026-09-15T00:00:00.000Z',
+      });
+
+      expect(rpc).toHaveBeenCalledWith(
+        'arteflow_create_order_with_production',
+        expect.objectContaining({
+          p_items: [
+            expect.objectContaining({ productName: 'Item A', initialStageId: 'stage-prepress' }),
+            expect.objectContaining({ productName: 'Item B', initialStageId: 'stage-scheduled' }),
+          ],
+        })
+      );
+    });
+
+    it('10, 11, 12, 13. P1-01, P2-01 e IN_PRODUCTION preservados', () => {
+      expect(p202Migration).toContain("private.arteflow_has_permission(p_organization_id, 'arteflow.orders.create')");
+      expect(p202Migration).toContain('p_orcagraf_quote_id text default null');
+      expect(p202Migration).toContain("'IN_PRODUCTION'");
+    });
+  });
 });

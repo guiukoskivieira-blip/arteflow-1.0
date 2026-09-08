@@ -78,6 +78,7 @@ export interface OrderItem {
   finishings: string[];
   technicalNotes?: string;
   generatedJobId?: string;
+  initialStageId?: string;
   dataOrigin: DataOrigin;
 }
 

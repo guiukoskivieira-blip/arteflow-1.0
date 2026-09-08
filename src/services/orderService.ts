@@ -137,6 +137,7 @@ export class OrderService {
         finishings: itemInput.finishings || [],
         technicalNotes: itemInput.technicalNotes?.trim() || undefined,
         generatedJobId: jobId,
+        initialStageId: itemInput.initialStageId || undefined,
         dataOrigin,
       };
 
@@ -157,7 +158,7 @@ export class OrderService {
         unit: orderItem.unit,
         finishings: orderItem.finishings,
         technicalNotes: orderItem.technicalNotes,
-        stageId: itemInput.initialStageId || 'stage-entry',
+        stageId: itemInput.initialStageId || '',
         artworkGate: 'NOT_RECEIVED',
         materialGate: 'NOT_CHECKED',
         financialGate: 'PAYMENT_PENDING',

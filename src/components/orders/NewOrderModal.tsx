@@ -36,6 +36,7 @@ interface ItemFormState {
   finishingsInput: string;
   technicalNotes: string;
   priority: Priority;
+  initialStageId?: string;
 }
 
 const emptyItem: ItemFormState = {
@@ -51,6 +52,7 @@ const emptyItem: ItemFormState = {
   finishingsInput: '',
   technicalNotes: '',
   priority: 'MEDIUM',
+  initialStageId: '',
 };
 
 export const NewOrderModal: React.FC = () => {
@@ -60,8 +62,26 @@ export const NewOrderModal: React.FC = () => {
     createManualOrder,
     checkOrcagrafEntitlement,
     listImportableOrcagrafQuotes,
+    stages,
   } = useArteFlow();
   const config = useMemo(() => getArteFlowRuntimeConfig(), []);
+
+  // Filter active stages for the organization
+  const activeStages = useMemo(() => {
+    return [...(stages || [])]
+      .filter((s: any) => s.isActive !== false)
+      .sort((a, b) => a.sequence - b.sequence);
+  }, [stages]);
+
+  // Determine default initial stage: isInitial=true (lowest sequence) or lowest sequence active stage
+  const defaultStageId = useMemo(() => {
+    if (activeStages.length === 0) return '';
+    const initialStages = activeStages.filter((s) => s.isInitial);
+    if (initialStages.length > 0) {
+      return initialStages[0].id;
+    }
+    return activeStages[0].id;
+  }, [activeStages]);
 
   // Creation mode: 'manual' vs 'orcagraf'
   const [creationMode, setCreationMode] = useState<'manual' | 'orcagraf'>('manual');
@@ -90,7 +110,7 @@ export const NewOrderModal: React.FC = () => {
     return d.toISOString().substring(0, 10);
   });
   const [orderNotes, setOrderNotes] = useState('');
-  const [items, setItems] = useState<ItemFormState[]>([{ ...emptyItem }]);
+  const [items, setItems] = useState<ItemFormState[]>([{ ...emptyItem, initialStageId: defaultStageId }]);
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -222,6 +242,7 @@ export const NewOrderModal: React.FC = () => {
           finishingsInput: (it.finishings || []).join(', '),
           technicalNotes: it.technicalNotes || '',
           priority: 'MEDIUM',
+          initialStageId: defaultStageId,
         };
       });
       setItems(mappedItems);
@@ -232,7 +253,7 @@ export const NewOrderModal: React.FC = () => {
   };
 
   const handleAddItem = () => {
-    setItems((prev) => [...prev, { ...emptyItem }]);
+    setItems((prev) => [...prev, { ...emptyItem, initialStageId: defaultStageId }]);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -303,7 +324,7 @@ export const NewOrderModal: React.FC = () => {
           finishings,
           technicalNotes: item.technicalNotes.trim() || undefined,
           priority: item.priority,
-          initialStageId: 'stage-entry',
+          initialStageId: item.initialStageId || defaultStageId || undefined,
         };
       });
 
@@ -842,6 +863,25 @@ export const NewOrderModal: React.FC = () => {
                           <option value="URGENT">Urgente</option>
                         </select>
                       </div>
+
+                      {activeStages.length > 0 && (
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1">
+                            Etapa Inicial
+                          </label>
+                          <select
+                            value={item.initialStageId || defaultStageId}
+                            onChange={(e) => handleItemChange(index, 'initialStageId', e.target.value)}
+                            className="w-full text-xs px-3 py-1.5 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:outline-none"
+                          >
+                            {activeStages.map((st) => (
+                              <option key={st.id} value={st.id}>
+                                {st.name} {st.isInitial ? '(Padrão)' : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
 
                       {/* Dimensions Row */}
                       <div className="sm:col-span-2 grid grid-cols-3 gap-2">

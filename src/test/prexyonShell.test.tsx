@@ -10,19 +10,20 @@ describe('Shell visual Prexyon e ArteFlow', () => {
 
     expect(await screen.findByAltText('Prexyon')).toHaveAttribute('src', '/brand/prexyon-color.png');
     expect(screen.getByAltText('ArteFlow — Gestão da Produção')).toHaveAttribute('src', '/brand/arteflow-white.png');
-    expect(screen.getByRole('button', { name: /ArteFlow/i })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('button', { name: /produto selecionado: arteflow/i })).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('abre o seletor do ecossistema sem criar navegação falsa', async () => {
+  it('abre o seletor do ecossistema e exibe opções', async () => {
     render(<App />);
 
-    const switcher = await screen.findByRole('button', { name: /ArteFlow/i });
+    const switcher = await screen.findByRole('button', { name: /produto selecionado: arteflow/i });
     fireEvent.click(switcher);
 
     expect(switcher).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('menu')).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: /OrçaGraf/i })).toBeDisabled();
-    expect(screen.getByRole('menuitem', { name: /ArteCheck/i })).toBeDisabled();
-    expect(screen.getByRole('menuitem', { name: /ArteFlow/i })).toBeEnabled();
+    expect(screen.getByRole('menuitem', { name: /OrçaGraf/i })).toBeEnabled();
+    expect(screen.getByRole('menuitem', { name: /ArteCheck/i })).toBeEnabled();
+    expect(screen.getByRole('menuitem', { name: /ArteFlow/i })).toBeDisabled();
   });
 });
+

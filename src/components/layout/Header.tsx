@@ -1,15 +1,13 @@
 import React from 'react';
 import { useArteFlow } from '../../context/ArteFlowContext';
 import { DEMO_USERS } from '../../domain/constants';
-import { Menu, Plus, Building2, UserCircle2, LogOut } from 'lucide-react';
+import { Menu, Plus, Building2, UserCircle2 } from 'lucide-react';
 import { useOptionalAuth } from '../../context/AuthContext';
 
 export const Header: React.FC = () => {
   const auth = useOptionalAuth();
   const mode = auth?.mode ?? 'standalone';
-  const tenant = auth?.tenant ?? null;
   const can = auth?.can ?? (() => true);
-  const signOut = auth?.signOut ?? (async () => undefined);
   const {
     organization,
     currentUser,
@@ -70,45 +68,36 @@ export const Header: React.FC = () => {
       {/* Right: Actions, Honest Local Operator Selector, New Order Button */}
       <div className="flex items-center gap-2 md:gap-3">
         {/* Honest Local Demo Operator Selector */}
-        {mode === 'standalone' ? <div
-          className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80"
-          title="Seletor de operador local para assinatura de eventos de auditoria"
-        >
-          <UserCircle2 className="w-4 h-4 text-sky-600 flex-shrink-0" />
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] uppercase font-bold text-slate-400">
-                Operador Local (Demo):
-              </span>
-              <span className="text-[9px] px-1 bg-sky-50 text-sky-700 border border-sky-200 rounded font-semibold">
-                Sem Auth
-              </span>
+        {mode === 'standalone' && (
+          <div
+            className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80"
+            title="Seletor de operador local para assinatura de eventos de auditoria"
+          >
+            <UserCircle2 className="w-4 h-4 text-sky-600 flex-shrink-0" />
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400">
+                  Operador Local (Demo):
+                </span>
+                <span className="text-[9px] px-1 bg-sky-50 text-sky-700 border border-sky-200 rounded font-semibold">
+                  Sem Auth
+                </span>
+              </div>
+              <select
+                value={currentUser.id}
+                onChange={(e) => {
+                  const selected = DEMO_USERS.find((u) => u.id === e.target.value);
+                  if (selected) setCurrentUser(selected);
+                }}
+                className="text-xs font-semibold text-slate-800 bg-transparent border-none focus:ring-0 focus:outline-none cursor-pointer -ml-0.5"
+              >
+                {DEMO_USERS.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name} ({user.role})
+                  </option>
+                ))}
+              </select>
             </div>
-            <select
-              value={currentUser.id}
-              onChange={(e) => {
-                const selected = DEMO_USERS.find((u) => u.id === e.target.value);
-                if (selected) setCurrentUser(selected);
-              }}
-              className="text-xs font-semibold text-slate-800 bg-transparent border-none focus:ring-0 focus:outline-none cursor-pointer -ml-0.5"
-            >
-              {DEMO_USERS.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.name} ({user.role})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div> : (
-          <div className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200/80">
-            <UserCircle2 className="w-4 h-4 text-blue-600" aria-hidden="true" />
-            <div className="flex flex-col max-w-48">
-              <span className="truncate text-xs font-semibold text-slate-800">{currentUser.name}</span>
-              <span className="truncate text-[10px] text-slate-500">{currentUser.email} · {tenant?.membership.role}</span>
-            </div>
-            <button type="button" onClick={() => void signOut()} className="p-1.5 text-slate-500 hover:text-red-600" aria-label="Sair do ArteFlow">
-              <LogOut className="w-4 h-4" />
-            </button>
           </div>
         )}
 

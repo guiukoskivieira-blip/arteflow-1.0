@@ -8,6 +8,8 @@ export interface ArteFlowRuntimeConfig {
   supabaseKey: string;
   prexyonPortalUrl: string;
   arteFlowAppUrl: string;
+  orcagrafAppUrl: string;
+  artecheckAppUrl: string;
   isSupabaseConfigured: boolean;
   callbackUrl: string | null;
 }
@@ -38,6 +40,8 @@ export function getArteFlowRuntimeConfig(
   const supabaseKey = String(env.VITE_SUPABASE_PUBLISHABLE_KEY ?? '').trim();
   const prexyonPortalUrl = safeHttpUrl(env.VITE_PREXYON_PORTAL_URL);
   const arteFlowAppUrl = safeHttpUrl(env.VITE_ARTEFLOW_APP_URL);
+  const orcagrafAppUrl = safeHttpUrl(env.VITE_ORCAGRAF_APP_URL);
+  const artecheckAppUrl = safeHttpUrl(env.VITE_ARTECHECK_APP_URL);
 
   return {
     mode,
@@ -47,6 +51,8 @@ export function getArteFlowRuntimeConfig(
     supabaseKey,
     prexyonPortalUrl,
     arteFlowAppUrl,
+    orcagrafAppUrl,
+    artecheckAppUrl,
     isSupabaseConfigured: Boolean(supabaseUrl && supabaseKey),
     callbackUrl: arteFlowAppUrl ? `${arteFlowAppUrl}/auth/prexyon` : null,
   };

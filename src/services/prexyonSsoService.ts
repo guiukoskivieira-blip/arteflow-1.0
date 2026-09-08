@@ -99,3 +99,25 @@ export async function exchangePrexyonCode(
     session,
   };
 }
+
+export async function generateSsoCodeForProduct(
+  supabase: SupabaseClient,
+  organizationId: string,
+  targetProductCode: string
+): Promise<string> {
+  const { data, error } = await supabase.rpc('prexyon_generate_sso_code', {
+    p_organization_id: organizationId,
+    p_product_code: targetProductCode,
+  });
+
+  if (error) {
+    throw new Error(`SSO_GENERATE_FAILED: ${error.message}`);
+  }
+
+  const code = typeof data === 'string' ? data.trim() : (data as any)?.code;
+  if (!code || typeof code !== 'string') {
+    throw new Error('SSO_GENERATE_FAILED: Código não retornado pela autoridade Prexyon.');
+  }
+
+  return code;
+}

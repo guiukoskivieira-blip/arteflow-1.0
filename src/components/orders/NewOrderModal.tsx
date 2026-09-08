@@ -71,6 +71,7 @@ export const NewOrderModal: React.FC = () => {
   const [isLoadingEntitlement, setIsLoadingEntitlement] = useState(false);
   const [quotes, setQuotes] = useState<OrcagrafQuote[]>([]);
   const [isLoadingQuotes, setIsLoadingQuotes] = useState(false);
+  const [quotesLoadError, setQuotesLoadError] = useState<string | null>(null);
   const [quoteSearchQuery, setQuoteSearchQuery] = useState('');
   const [importedQuoteReference, setImportedQuoteReference] = useState<string | null>(null);
   const [sellerName, setSellerName] = useState<string | null>(null);
@@ -117,6 +118,7 @@ export const NewOrderModal: React.FC = () => {
     if (isNewOrderModalOpen && creationMode === 'orcagraf') {
       let active = true;
       setIsLoadingEntitlement(true);
+      setQuotesLoadError(null);
 
       checkOrcagrafEntitlement()
         .then((status) => {
@@ -126,6 +128,7 @@ export const NewOrderModal: React.FC = () => {
 
           if (status.canImport) {
             setIsLoadingQuotes(true);
+            setQuotesLoadError(null);
             listImportableOrcagrafQuotes()
               .then((loadedQuotes) => {
                 if (!active) return;
@@ -133,7 +136,8 @@ export const NewOrderModal: React.FC = () => {
               })
               .catch((err) => {
                 if (!active) return;
-                setErrorMsg(err.message || 'Erro ao carregar orçamentos.');
+                setQuotes([]);
+                setQuotesLoadError(err.message || 'Erro ao carregar orçamentos.');
               })
               .finally(() => {
                 if (active) setIsLoadingQuotes(false);
@@ -164,6 +168,7 @@ export const NewOrderModal: React.FC = () => {
     setSellerName(null);
     setSellerCommissionPct(undefined);
     setErrorMsg('');
+    setQuotesLoadError(null);
     // Retorno acessível de foco ao elemento acionador
     setTimeout(() => {
       triggerElementRef.current?.focus();
@@ -507,6 +512,16 @@ export const NewOrderModal: React.FC = () => {
                   <div className="py-10 flex flex-col items-center justify-center gap-2 text-slate-500 text-xs">
                     <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
                     <span>Carregando orçamentos aprovados...</span>
+                  </div>
+                ) : quotesLoadError ? (
+                  <div className="rounded-xl border border-red-200 bg-red-50/70 p-6 text-center space-y-2">
+                    <AlertCircle className="w-8 h-8 text-red-600 mx-auto" />
+                    <h4 className="text-sm font-bold text-red-900">
+                      Permissão Insuficiente
+                    </h4>
+                    <p className="text-xs text-red-800 max-w-md mx-auto">
+                      {quotesLoadError}
+                    </p>
                   </div>
                 ) : filteredQuotes.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-slate-500 text-xs">

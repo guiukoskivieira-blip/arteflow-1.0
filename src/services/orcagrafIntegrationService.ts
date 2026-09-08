@@ -89,39 +89,8 @@ export class OrcagrafIntegrationService {
         };
       }
 
-      // Check user RBAC permission for OrçaGraf (quotes.view or owner role)
-      const { data: member } = await this.supabase
-        .from('organization_members')
-        .select('role')
-        .eq('organization_id', organizationId)
-        .eq('user_id', userId)
-        .eq('is_active', true)
-        .eq('is_locked', false)
-        .maybeSingle();
-
-      const isOwner = member?.role === 'owner';
-      if (!isOwner) {
-        // Check product permissions / overrides
-        const { data: perm } = await this.supabase
-          .from('product_permissions')
-          .select('is_granted')
-          .eq('organization_id', organizationId)
-          .eq('user_id', userId)
-          .eq('product_key', 'orcagraf')
-          .in('permission_key', ['orcagraf.quotes.view', 'quotes.view'])
-          .eq('is_granted', true)
-          .maybeSingle();
-
-        if (!perm) {
-          return {
-            isEntitled: true,
-            hasUserAccess: false,
-            canImport: false,
-            reason: 'O usuário não possui permissão no OrçaGraf para visualizar orçamentos.',
-          };
-        }
-      }
-
+      // Dual entitlement and dual product_access validated.
+      // Final granular RBAC (orcagraf.quotes.view, arteflow.orders.create, explicit deny) is strictly enforced server-side by the RPC.
       return {
         isEntitled: true,
         hasUserAccess: true,
@@ -147,6 +116,17 @@ export class OrcagrafIntegrationService {
     });
 
     if (error) {
+      const msg = error.message || '';
+      if (
+        error.code === '42501' ||
+        msg.includes('42501') ||
+        msg.includes('ORDER_CREATE_FORBIDDEN') ||
+        msg.includes('ORCAGRAF_INTEGRATION_NOT_ENTITLED') ||
+        msg.includes('AUTHENTICATION_REQUIRED') ||
+        msg.includes('permission denied')
+      ) {
+        throw new Error('Você não possui permissão para importar orçamentos do OrçaGraf.');
+      }
       throw new Error(`Não foi possível listar os orçamentos do OrçaGraf: ${error.message}`);
     }
 

@@ -136,7 +136,7 @@ describe('P2-01 — Importação de Orçamento Aprovado do OrçaGraf com Dual En
       expect(res.reason).toMatch(/usuário não possui acesso individual ao ArteFlow/i);
     });
 
-    it('H. Usuário com dual product_access mas SEM permissão orcagraf.quotes.view recebe canImport: false', async () => {
+    it('H. Usuário com dual entitlement e dual product_access obtém canImport: true no frontend (não bloqueia por product_permissions)', async () => {
       const mockSupabase = {
         rpc: vi.fn().mockImplementation((name: string) => {
           if (name === 'prexyon_get_organization_entitlements') {
@@ -161,110 +161,6 @@ describe('P2-01 — Importação de Orçamento Aprovado do OrçaGraf com Dual En
                         ],
                         error: null,
                       }),
-                  }),
-                }),
-              }),
-            };
-          }
-          if (table === 'organization_members') {
-            return {
-              select: () => ({
-                eq: () => ({
-                  eq: () => ({
-                    eq: () => ({
-                      eq: () => ({
-                        maybeSingle: () => Promise.resolve({ data: { role: 'member' }, error: null }),
-                      }),
-                    }),
-                  }),
-                }),
-              }),
-            };
-          }
-          if (table === 'product_permissions') {
-            return {
-              select: () => ({
-                eq: () => ({
-                  eq: () => ({
-                    eq: () => ({
-                      in: () => ({
-                        eq: () => ({
-                          maybeSingle: () => Promise.resolve({ data: null, error: null }),
-                        }),
-                      }),
-                    }),
-                  }),
-                }),
-              }),
-            };
-          }
-          return { select: () => ({ eq: () => Promise.resolve({ data: [], error: null }) }) };
-        }),
-      } as any;
-
-      const service = new OrcagrafIntegrationService(mockSupabase);
-      const res = await service.checkIntegrationEntitlement('org-1', 'user-1');
-      expect(res.canImport).toBe(false);
-      expect(res.reason).toMatch(/não possui permissão no OrçaGraf para visualizar orçamentos/i);
-    });
-
-    it('I. Usuário com dual product_access e permissão orcagraf.quotes.view obtém canImport: true', async () => {
-      const mockSupabase = {
-        rpc: vi.fn().mockImplementation((name: string) => {
-          if (name === 'prexyon_get_organization_entitlements') {
-            return Promise.resolve({
-              data: [{ is_entitled: true, effective_products: ['orcagraf', 'arteflow'] }],
-              error: null,
-            });
-          }
-          return Promise.resolve({ data: null, error: null });
-        }),
-        from: vi.fn().mockImplementation((table: string) => {
-          if (table === 'organization_member_product_access') {
-            return {
-              select: () => ({
-                eq: () => ({
-                  eq: () => ({
-                    in: () =>
-                      Promise.resolve({
-                        data: [
-                          { product_code: 'orcagraf', is_enabled: true },
-                          { product_code: 'arteflow', is_enabled: true },
-                        ],
-                        error: null,
-                      }),
-                  }),
-                }),
-              }),
-            };
-          }
-          if (table === 'organization_members') {
-            return {
-              select: () => ({
-                eq: () => ({
-                  eq: () => ({
-                    eq: () => ({
-                      eq: () => ({
-                        maybeSingle: () => Promise.resolve({ data: { role: 'member' }, error: null }),
-                      }),
-                    }),
-                  }),
-                }),
-              }),
-            };
-          }
-          if (table === 'product_permissions') {
-            return {
-              select: () => ({
-                eq: () => ({
-                  eq: () => ({
-                    eq: () => ({
-                      in: () => ({
-                        eq: () => ({
-                          maybeSingle: () => Promise.resolve({ data: { is_granted: true }, error: null }),
-                        }),
-                      }),
-                    }),
                   }),
                 }),
               }),
@@ -277,6 +173,36 @@ describe('P2-01 — Importação de Orçamento Aprovado do OrçaGraf com Dual En
       const service = new OrcagrafIntegrationService(mockSupabase);
       const res = await service.checkIntegrationEntitlement('org-1', 'user-1');
       expect(res.canImport).toBe(true);
+      expect(res.isEntitled).toBe(true);
+      expect(res.hasUserAccess).toBe(true);
+    });
+
+    it('I. RPC 42501 / permission denied retorna erro amigável seguro sem dados e sem fallback demo', async () => {
+      const mockSupabase = {
+        rpc: vi.fn().mockResolvedValue({
+          data: null,
+          error: { code: '42501', message: 'permission denied for function arteflow_list_importable_orcagraf_quotes' },
+        }),
+      } as any;
+
+      const service = new OrcagrafIntegrationService(mockSupabase);
+      await expect(service.listImportableQuotes('org-1')).rejects.toThrow(
+        'Você não possui permissão para importar orçamentos do OrçaGraf.'
+      );
+    });
+
+    it('J. RPC erro técnico lança erro real (fail-closed, sem mascaramento nem fallback demo)', async () => {
+      const mockSupabase = {
+        rpc: vi.fn().mockResolvedValue({
+          data: null,
+          error: { code: '500', message: 'Internal network connection timeout' },
+        }),
+      } as any;
+
+      const service = new OrcagrafIntegrationService(mockSupabase);
+      await expect(service.listImportableQuotes('org-1')).rejects.toThrow(
+        'Não foi possível listar os orçamentos do OrçaGraf: Internal network connection timeout'
+      );
     });
   });
 

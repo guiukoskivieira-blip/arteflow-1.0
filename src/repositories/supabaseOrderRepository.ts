@@ -190,8 +190,20 @@ export class SupabaseOrderRepository implements IOrderRepository {
       p_items: order.items,
       p_notes: order.notes ?? null,
       p_delivery_date: order.deliveryDateISO,
+      p_orcagraf_quote_id: order.orcagrafQuoteId ?? null,
     });
-    if (error) throw new Error(`Não foi possível criar o pedido e a produção: ${error.message}`);
+    if (error) {
+      const msg = error.message || '';
+      if (
+        error.code === '23505' ||
+        msg.includes('23505') ||
+        msg.includes('ORCAGRAF_QUOTE_ALREADY_IMPORTED') ||
+        msg.includes('arteflow_orders_org_orcagraf_quote_uidx')
+      ) {
+        throw new Error('Este orçamento do OrçaGraf já foi importado para o ArteFlow.');
+      }
+      throw new Error(`Não foi possível criar o pedido e a produção: ${error.message}`);
+    }
     return data as Order;
   }
 

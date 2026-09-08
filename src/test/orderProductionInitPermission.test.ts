@@ -321,4 +321,116 @@ describe('Hotfix P1-01: Cenários de Validação Obrigatórios (A - G)', () => {
     expect(jobRepo.saveMany).not.toHaveBeenCalled();
     expect(eventRepo.appendMany).not.toHaveBeenCalled();
   });
+
+  describe('Hotfix P2-01: Persistência de orcagraf_quote_id e Bloqueio de Duplicidade (1 - 8)', () => {
+    const p2Migration = readFileSync(
+      'supabase/migrations/20260908030000_persist_orcagraf_quote_id_in_order_production.sql',
+      'utf8'
+    );
+
+    it('1 & 2. Importação OrçaGraf: orcagrafQuoteId chega ao repository e RPC recebe p_orcagraf_quote_id', async () => {
+      const rpc = vi.fn().mockResolvedValue({
+        data: { id: orderId, order_number: 'PED-2026-0001' },
+        error: null,
+      });
+
+      const orderRepo = new SupabaseOrderRepository({ rpc } as unknown as SupabaseClient);
+      const jobRepo = { list: vi.fn().mockResolvedValue([]), listByOrderId: vi.fn(), saveMany: vi.fn() };
+      const eventRepo = { appendMany: vi.fn() };
+      const orderService = new OrderService(orderRepo, jobRepo as any, eventRepo as any);
+
+      await orderService.createManualOrder({
+        organizationId: orgA,
+        origin: 'ORCAGRAF',
+        orcagrafQuoteId: 'orc-quote-uuid-1234',
+        customer: { name: 'Cliente OrçaGraf' },
+        items: [
+          { productName: 'Banner 440g', sector: 'Digital', unit: 'm', quantity: 2, unitPriceCents: 5000, finishings: [] },
+        ],
+        deliveryDateISO: '2026-09-15T00:00:00.000Z',
+      });
+
+      expect(rpc).toHaveBeenCalledWith(
+        'arteflow_create_order_with_production',
+        expect.objectContaining({
+          p_organization_id: orgA,
+          p_origin: 'ORCAGRAF',
+          p_orcagraf_quote_id: 'orc-quote-uuid-1234',
+        })
+      );
+    });
+
+    it('3 & 4. Migration persiste orcagraf_quote_id no INSERT e pedido manual envia p_orcagraf_quote_id = NULL', async () => {
+      // 3. Verifica contrato SQL da migration
+      expect(p2Migration).toContain('p_orcagraf_quote_id text default null');
+      expect(p2Migration).toContain('orcagraf_quote_id, delivery_date, created_by, updated_by, data_origin');
+      expect(p2Migration).toContain('v_clean_quote_id, p_delivery_date, v_user_id, v_user_id, \'user\'');
+
+      // 4. Pedido manual envia null
+      const rpc = vi.fn().mockResolvedValue({
+        data: { id: orderId, order_number: 'PED-2026-0002' },
+        error: null,
+      });
+      const orderRepo = new SupabaseOrderRepository({ rpc } as unknown as SupabaseClient);
+      const jobRepo = { list: vi.fn().mockResolvedValue([]), listByOrderId: vi.fn(), saveMany: vi.fn() };
+      const eventRepo = { appendMany: vi.fn() };
+      const orderService = new OrderService(orderRepo, jobRepo as any, eventRepo as any);
+
+      await orderService.createManualOrder({
+        organizationId: orgA,
+        origin: 'MANUAL',
+        customer: { name: 'Cliente Manual' },
+        items: [
+          { productName: 'Cartão de Visita', sector: 'Digital', unit: 'mm', quantity: 1000, unitPriceCents: 10, finishings: [] },
+        ],
+        deliveryDateISO: '2026-09-15T00:00:00.000Z',
+      });
+
+      expect(rpc).toHaveBeenCalledWith(
+        'arteflow_create_order_with_production',
+        expect.objectContaining({
+          p_origin: 'MANUAL',
+          p_orcagraf_quote_id: null,
+        })
+      );
+    });
+
+    it('5 & 6. Erro de duplicidade 23505 traduzido para mensagem amigável sem vazar detalhes internos', async () => {
+      const rpc = vi.fn().mockResolvedValue({
+        data: null,
+        error: {
+          code: '23505',
+          message: 'duplicate key value violates unique constraint "arteflow_orders_org_orcagraf_quote_uidx"',
+        },
+      });
+
+      const orderRepo = new SupabaseOrderRepository({ rpc } as unknown as SupabaseClient);
+      const jobRepo = { list: vi.fn().mockResolvedValue([]), listByOrderId: vi.fn(), saveMany: vi.fn() };
+      const eventRepo = { appendMany: vi.fn() };
+      const orderService = new OrderService(orderRepo, jobRepo as any, eventRepo as any);
+
+      await expect(
+        orderService.createManualOrder({
+          organizationId: orgA,
+          origin: 'ORCAGRAF',
+          orcagrafQuoteId: 'orc-quote-uuid-1234',
+          customer: { name: 'Cliente Duplicado' },
+          items: [
+            { productName: 'Item Duplicado', sector: 'Digital', unit: 'cm', quantity: 1, unitPriceCents: 1000, finishings: [] },
+          ],
+          deliveryDateISO: '2026-09-15T00:00:00.000Z',
+        })
+      ).rejects.toThrow('Este orçamento do OrçaGraf já foi importado para o ArteFlow.');
+    });
+
+    it('7 & 8. P1-01 preservado e criação normal continua gerando pedido + OPs', () => {
+      // P1-01 preservado
+      expect(p2Migration).toContain("private.arteflow_has_permission(p_organization_id, 'arteflow.orders.create')");
+      expect(p2Migration).not.toContain('private.arteflow_can_manage_production');
+      expect(p2Migration).not.toContain('PRODUCTION_MANAGE_DENIED');
+      // Geração de OP e eventos preservada
+      expect(p2Migration).toContain('insert into public.arteflow_production_jobs');
+      expect(p2Migration).toContain('insert into public.arteflow_production_job_events');
+    });
+  });
 });

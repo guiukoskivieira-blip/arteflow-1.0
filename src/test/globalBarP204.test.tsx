@@ -237,4 +237,60 @@ describe('Global Bar P2-04 Tests & Hotfix Verification', () => {
     // Validamos que ao re-renderizar ou manter AUTHORIZED, o seletor está em idle (AF exibido e habilitado)
     expect(screen.getByRole('button', { name: /produto selecionado: arteflow/i })).toBeInTheDocument();
   });
+
+  it('I. Evento pageshow (BFCache / retorno do navegador) e visibilitychange resetam switchingProduct', async () => {
+    const customConfig = {
+      mode: 'connected' as const,
+      isDev: false,
+      isProduction: true,
+      supabaseUrl: 'https://test.supabase.co',
+      supabaseKey: 'test-key',
+      prexyonPortalUrl: 'https://portal.prexyon.test',
+      arteFlowAppUrl: 'https://arteflow.prexyon.test',
+      orcagrafAppUrl: 'https://or-agraf-bete-20-production.up.railway.app',
+      artecheckAppUrl: 'https://eloquent-vitality-production-48ec.up.railway.app',
+      isSupabaseConfigured: true,
+      callbackUrl: 'https://arteflow.prexyon.test/auth/prexyon',
+    };
+
+    const mockSupabase = { rpc: vi.fn() } as any;
+    vi.spyOn(supabaseClient, 'getSupabaseClient').mockReturnValue(mockSupabase);
+    // Simula uma RPC que não resolve imediatamente para inspecionar o estado durante a troca
+    let resolveSso: (code: string) => void;
+    const ssoPromise = new Promise<string>((resolve) => {
+      resolveSso = resolve;
+    });
+    vi.spyOn(prexyonSsoService, 'generateSsoCodeForProduct').mockReturnValue(ssoPromise);
+
+    const assignMock = vi.fn();
+    delete (window as any).location;
+    window.location = { assign: assignMock } as any;
+
+    renderPrexyonBar(customConfig);
+    const switcher = screen.getByRole('button', { name: /produto selecionado: arteflow/i });
+    fireEvent.click(switcher);
+
+    const ogOption = screen.getByRole('menuitem', { name: /OrçaGraf/i });
+    fireEvent.click(ogOption);
+
+    // Durante a emissão, o botão mostra o spinner e desabilita
+    expect(switcher).toBeDisabled();
+
+    // Simula restauração de página via pageshow (BFCache)
+    window.dispatchEvent(new Event('pageshow'));
+
+    // O seletor deve ser resetado imediatamente para idle
+    await waitFor(() => {
+      expect(switcher).not.toBeDisabled();
+    });
+    expect(screen.getByText('AF')).toBeInTheDocument();
+
+    // Reabrir o seletor comprova que o menu abre limpo e sem spinner
+    fireEvent.click(switcher);
+    const reloadedOgOption = screen.getByRole('menuitem', { name: /OrçaGraf/i });
+    expect(reloadedOgOption).not.toBeDisabled();
+
+    // Limpa a promise pendente
+    resolveSso!('done');
+  });
 });

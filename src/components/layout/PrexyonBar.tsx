@@ -64,17 +64,41 @@ export const PrexyonBar: React.FC = () => {
   const switcherRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
+  const resetSwitchState = () => {
+    setSwitchingProduct(null);
+    setIsSwitcherOpen(false);
+  };
+
   useEffect(() => {
     if (auth?.status === 'AUTHORIZED') {
-      setSwitchingProduct(null);
-      setIsSwitcherOpen(false);
+      resetSwitchState();
     }
   }, [auth?.status, auth?.tenant?.identity.id]);
 
   useEffect(() => {
+    const handlePageShow = () => {
+      resetSwitchState();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        resetSwitchState();
+      }
+    };
+
+    const handleFocus = () => {
+      resetSwitchState();
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
     return () => {
-      setSwitchingProduct(null);
-      setIsSwitcherOpen(false);
+      window.removeEventListener('pageshow', handlePageShow);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      resetSwitchState();
     };
   }, []);
 

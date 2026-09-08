@@ -226,18 +226,57 @@ describe('P2-01 — Importação de Orçamento Aprovado do OrçaGraf com Dual En
       );
     });
 
-    it('J. RPC erro técnico lança erro real (fail-closed, sem mascaramento nem fallback demo)', async () => {
+    it('J. RPC erro técnico lança mensagem sanitizada sem vazar SQL/relation/column', async () => {
       const mockSupabase = {
         rpc: vi.fn().mockResolvedValue({
           data: null,
-          error: { code: '500', message: 'Internal network connection timeout' },
+          error: { code: '42P01', message: 'relation "public.orcagraf_quotes" does not exist' },
         }),
       } as any;
 
       const service = new OrcagrafIntegrationService(mockSupabase);
       await expect(service.listImportableQuotes('org-1')).rejects.toThrow(
-        'Não foi possível listar os orçamentos do OrçaGraf: Internal network connection timeout'
+        'Não foi possível carregar os orçamentos do OrçaGraf. Tente novamente.'
       );
+    });
+
+    it('K. Contrato SQL da migration 20260908020000_fix_orcagraf_quote_import_source.sql usa tabelas canônicas (A-M)', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const sql = fs.readFileSync(
+        path.resolve(__dirname, '../../supabase/migrations/20260908020000_fix_orcagraf_quote_import_source.sql'),
+        'utf-8'
+      );
+
+      // A. usa public.quotes, não public.orcagraf_quotes
+      expect(sql).toContain('from public.quotes q');
+      expect(sql).not.toContain('public.orcagraf_quotes');
+
+      // B. usa public.quote_items
+      expect(sql).toContain('from public.quote_items qi');
+
+      // C. usa public.quote_item_finishings
+      expect(sql).toContain('from public.quote_item_finishings qif');
+
+      // D. status aprovado = 'approved'
+      expect(sql).toContain("q.status = 'approved'");
+
+      // E. deleted_at não nulo não aparece
+      expect(sql).toContain('q.deleted_at is null');
+
+      // F. tenant filter
+      expect(sql).toContain('q.organization_id = p_organization_id');
+      expect(sql).toContain('qi.organization_id = p_organization_id');
+
+      // G. duplicate filter
+      expect(sql).toContain('ao.orcagraf_quote_id = q.id::text');
+
+      // K. q.id::text
+      expect(sql).toContain("'id', q.id::text");
+
+      // L & M. authz preservada
+      expect(sql).toContain('private.arteflow_can_import_orcagraf(p_organization_id)');
+      expect(sql).toContain("raise exception 'ORCAGRAF_INTEGRATION_NOT_ENTITLED' using errcode = '42501'");
     });
   });
 

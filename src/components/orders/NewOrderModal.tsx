@@ -517,7 +517,9 @@ export const NewOrderModal: React.FC = () => {
                   <div className="rounded-xl border border-red-200 bg-red-50/70 p-6 text-center space-y-2">
                     <AlertCircle className="w-8 h-8 text-red-600 mx-auto" />
                     <h4 className="text-sm font-bold text-red-900">
-                      Permissão Insuficiente
+                      {quotesLoadError.includes('permissão')
+                        ? 'Permissão Insuficiente'
+                        : 'Não foi possível carregar os orçamentos'}
                     </h4>
                     <p className="text-xs text-red-800 max-w-md mx-auto">
                       {quotesLoadError}

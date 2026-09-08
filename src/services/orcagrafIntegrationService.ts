@@ -125,7 +125,10 @@ export class OrcagrafIntegrationService {
       ) {
         throw new Error('Você não possui permissão para importar orçamentos do OrçaGraf.');
       }
-      throw new Error(`Não foi possível listar os orçamentos do OrçaGraf: ${error.message}`);
+      if (import.meta.env.DEV) {
+        console.error('[OrcagrafIntegrationService] Erro ao listar orçamentos:', error);
+      }
+      throw new Error('Não foi possível carregar os orçamentos do OrçaGraf. Tente novamente.');
     }
 
     return (data ?? []) as OrcagrafQuote[];

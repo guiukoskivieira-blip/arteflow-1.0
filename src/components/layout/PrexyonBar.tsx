@@ -65,6 +65,20 @@ export const PrexyonBar: React.FC = () => {
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (auth?.status === 'AUTHORIZED') {
+      setSwitchingProduct(null);
+      setIsSwitcherOpen(false);
+    }
+  }, [auth?.status, auth?.tenant?.identity.id]);
+
+  useEffect(() => {
+    return () => {
+      setSwitchingProduct(null);
+      setIsSwitcherOpen(false);
+    };
+  }, []);
+
+  useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
       const target = event.target as Node;
       if (!switcherRef.current?.contains(target)) setIsSwitcherOpen(false);

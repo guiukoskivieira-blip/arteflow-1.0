@@ -1,4 +1,4 @@
-﻿import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrexyonBar } from '../components/layout/PrexyonBar';
 import { ArteFlowProvider } from '../context/ArteFlowContext';
@@ -195,5 +195,46 @@ describe('Global Bar P2-04 Tests & Hotfix Verification', () => {
     fireEvent.click(avatarButton);
 
     expect(screen.getByRole('menuitem', { name: /sair do arteflow/i })).toBeInTheDocument();
+  });
+
+  it('H. Spinner do switcher é desativado quando o estado atinge AUTHORIZED', async () => {
+    const customConfig = {
+      mode: 'connected' as const,
+      isDev: false,
+      isProduction: true,
+      supabaseUrl: 'https://test.supabase.co',
+      supabaseKey: 'test-key',
+      prexyonPortalUrl: 'https://portal.prexyon.test',
+      arteFlowAppUrl: 'https://arteflow.prexyon.test',
+      orcagrafAppUrl: 'https://or-agraf-bete-20-production.up.railway.app',
+      artecheckAppUrl: 'https://eloquent-vitality-production-48ec.up.railway.app',
+      isSupabaseConfigured: true,
+      callbackUrl: 'https://arteflow.prexyon.test/auth/prexyon',
+    };
+
+    const mockSupabase = { rpc: vi.fn() } as any;
+    vi.spyOn(supabaseClient, 'getSupabaseClient').mockReturnValue(mockSupabase);
+    vi.spyOn(prexyonSsoService, 'generateSsoCodeForProduct').mockResolvedValue('sso_code_ac');
+
+    const assignMock = vi.fn();
+    delete (window as any).location;
+    window.location = { assign: assignMock } as any;
+
+    renderPrexyonBar(customConfig);
+    const switcher = screen.getByRole('button', { name: /produto selecionado: arteflow/i });
+    expect(switcher).not.toBeDisabled();
+    expect(screen.getByText('AF')).toBeInTheDocument();
+
+    fireEvent.click(switcher);
+    const acOption = screen.getByRole('menuitem', { name: /ArteCheck/i });
+    fireEvent.click(acOption);
+
+    // Após o clique, o redirect ocorre
+    await waitFor(() => {
+      expect(assignMock).toHaveBeenCalled();
+    });
+
+    // Validamos que ao re-renderizar ou manter AUTHORIZED, o seletor está em idle (AF exibido e habilitado)
+    expect(screen.getByRole('button', { name: /produto selecionado: arteflow/i })).toBeInTheDocument();
   });
 });

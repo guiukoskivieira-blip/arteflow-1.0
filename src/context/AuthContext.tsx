@@ -142,10 +142,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let active = true;
     const bootstrap = async () => {
       try {
-        const isCallback = window.location.pathname === '/auth/prexyon';
+        const isPathCallback = window.location.pathname === '/auth/prexyon';
+        const isHashCallback = window.location.hash.startsWith('#/auth/prexyon') || window.location.hash.includes('/auth/prexyon');
+        const isCallback = isPathCallback || isHashCallback;
+
         if (isCallback) {
-          const callbackSearch = window.location.search;
-          const currentCallback = `${window.location.origin}${window.location.pathname}`.replace(/\/$/, '');
+          const callbackSearch = window.location.search || window.location.hash;
+          const currentCallback = `${window.location.origin}${isPathCallback ? window.location.pathname : '/auth/prexyon'}`.replace(/\/$/, '');
           window.history.replaceState({}, document.title, '/');
 
           // If a strict callback URL is configured, enforce matching origin or allow same-origin host

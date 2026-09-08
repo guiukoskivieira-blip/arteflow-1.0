@@ -393,6 +393,9 @@ describe('Prexyon SSO V2', () => {
   it('52. raw SSO code aceita parâmetros compatíveis e nunca é persistido', async () => {
     expect(readPrexyonCode('?code=one-time')).toBe('one-time');
     expect(readPrexyonCode('?sso_code=legacy-one-time')).toBe('legacy-one-time');
+    expect(readPrexyonCode('#/auth/prexyon?code=one-time-from-hash')).toBe('one-time-from-hash');
+    expect(readPrexyonCode('#/auth/prexyon?sso_code=legacy-hash-code&org=org-1')).toBe('legacy-hash-code');
+    expect(readPrexyonCode('code=direct-param')).toBe('direct-param');
     expect(() => readPrexyonCode('?code=a&sso_code=b')).toThrow('INVALID_CODE');
     const storageSpy = vi.spyOn(Storage.prototype, 'setItem');
     await exchangePrexyonCode(ssoClient({ data: validExchange() }), 'one-time');

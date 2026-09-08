@@ -35,7 +35,8 @@ function exchangeFailure(error: unknown, payload: ExchangePayload | null): Error
 }
 
 export function readPrexyonCode(search: string): string {
-  const params = new URLSearchParams(search);
+  const queryPart = search.includes('?') ? search.slice(search.indexOf('?')) : (search.startsWith('code=') || search.startsWith('sso_code=') ? `?${search}` : search);
+  const params = new URLSearchParams(queryPart);
   const code = requiredText(params.get('code'));
   const legacyCode = requiredText(params.get('sso_code'));
   if (code && legacyCode && code !== legacyCode) throw new Error('INVALID_CODE');

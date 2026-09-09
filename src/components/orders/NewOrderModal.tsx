@@ -100,6 +100,9 @@ export const NewOrderModal: React.FC = () => {
   const [sellerName, setSellerName] = useState<string | null>(null);
   const [sellerCommissionPct, setSellerCommissionPct] = useState<number | undefined>(undefined);
   const [sellerCommissionAmountCents, setSellerCommissionAmountCents] = useState<number | undefined>(undefined);
+  const [orcagrafSubtotalCents, setOrcagrafSubtotalCents] = useState<number | undefined>(undefined);
+  const [orcagrafDiscountCents, setOrcagrafDiscountCents] = useState<number | undefined>(undefined);
+  const [orcagrafApprovedTotalCents, setOrcagrafApprovedTotalCents] = useState<number | undefined>(undefined);
 
   // Form Fields
   const [customerName, setCustomerName] = useState('');
@@ -193,6 +196,9 @@ export const NewOrderModal: React.FC = () => {
     setSellerName(null);
     setSellerCommissionPct(undefined);
     setSellerCommissionAmountCents(undefined);
+    setOrcagrafSubtotalCents(undefined);
+    setOrcagrafDiscountCents(undefined);
+    setOrcagrafApprovedTotalCents(undefined);
     setErrorMsg('');
     setQuotesLoadError(null);
     // Retorno acessível de foco ao elemento acionador
@@ -226,6 +232,9 @@ export const NewOrderModal: React.FC = () => {
     setSellerName(quote.sellerName || null);
     setSellerCommissionPct(quote.sellerCommissionPct);
     setSellerCommissionAmountCents(quote.sellerCommissionAmountCents);
+    setOrcagrafSubtotalCents(quote.subtotalAmountCents);
+    setOrcagrafDiscountCents(quote.discountAppliedCents);
+    setOrcagrafApprovedTotalCents(quote.totalAmountCents);
 
     if (quote.deliveryDate) {
       setDeliveryDate(quote.deliveryDate.substring(0, 10));
@@ -287,11 +296,17 @@ export const NewOrderModal: React.FC = () => {
 
   const totalOrderCents = calculatedItems.reduce((acc, curr) => acc + curr.itemTotalCents, 0);
 
+  // For OrçaGraf orders: use the server-approved total (which accounts for discount)
+  // For manual orders: use the item-derived total
+  const displayTotalCents = (orderOrigin === 'ORCAGRAF' && orcagrafApprovedTotalCents !== undefined)
+    ? orcagrafApprovedTotalCents
+    : totalOrderCents;
+
   const estimatedCommissionCents =
     orderOrigin === 'ORCAGRAF' && sellerCommissionAmountCents !== undefined
       ? sellerCommissionAmountCents
-      : sellerCommissionPct !== undefined && sellerCommissionPct > 0 && totalOrderCents > 0
-      ? Math.round((totalOrderCents * sellerCommissionPct) / 100)
+      : sellerCommissionPct !== undefined && sellerCommissionPct > 0 && displayTotalCents > 0
+      ? Math.round((displayTotalCents * sellerCommissionPct) / 100)
       : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -378,6 +393,9 @@ export const NewOrderModal: React.FC = () => {
       setSellerName(null);
       setSellerCommissionPct(undefined);
       setSellerCommissionAmountCents(undefined);
+      setOrcagrafSubtotalCents(undefined);
+      setOrcagrafDiscountCents(undefined);
+      setOrcagrafApprovedTotalCents(undefined);
       setItems([{ ...emptyItem }]);
 
       handleClose();
@@ -481,6 +499,10 @@ export const NewOrderModal: React.FC = () => {
                 setOrderOrigin('MANUAL');
                 setSellerName(null);
                 setSellerCommissionPct(undefined);
+                setSellerCommissionAmountCents(undefined);
+                setOrcagrafSubtotalCents(undefined);
+                setOrcagrafDiscountCents(undefined);
+                setOrcagrafApprovedTotalCents(undefined);
               }}
               className="text-[11px] font-bold text-emerald-700 hover:underline"
             >
@@ -1079,15 +1101,28 @@ export const NewOrderModal: React.FC = () => {
               </div>
 
               <div className="text-right sm:self-end">
-                <span className="text-xs text-slate-500 font-medium block">
-                  Valor Total do Pedido:
-                </span>
-                <span className="text-xl font-black text-slate-900 font-mono">
-                  {formatCentsToBRL(totalOrderCents)}
-                </span>
-                <span className="text-[10px] text-slate-400 block mt-0.5">
-                  Calculado em centavos inteiros ({totalOrderCents}¢)
-                </span>
+                {orderOrigin === 'ORCAGRAF' && orcagrafDiscountCents !== undefined && orcagrafDiscountCents > 0 && orcagrafSubtotalCents !== undefined ? (
+                  <div className="space-y-0.5">
+                    <span className="text-xs text-slate-500 font-medium block">Subtotal dos itens:</span>
+                    <span className="text-sm font-bold text-slate-700 font-mono block">{formatCentsToBRL(orcagrafSubtotalCents)}</span>
+                    <span className="text-xs text-red-600 font-semibold block">− Desconto: {formatCentsToBRL(orcagrafDiscountCents)}</span>
+                    <span className="text-xs text-slate-500 font-medium block mt-1">Total Aprovado OrçaGraf:</span>
+                    <span className="text-xl font-black text-emerald-800 font-mono">{formatCentsToBRL(displayTotalCents)}</span>
+                    <span className="text-[10px] text-emerald-600 block mt-0.5">Valor canônico aprovado ({displayTotalCents}¢)</span>
+                  </div>
+                ) : (
+                  <>
+                    <span className="text-xs text-slate-500 font-medium block">
+                      Valor Total do Pedido:
+                    </span>
+                    <span className="text-xl font-black text-slate-900 font-mono">
+                      {formatCentsToBRL(displayTotalCents)}
+                    </span>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">
+                      Calculado em centavos inteiros ({displayTotalCents}¢)
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </form>

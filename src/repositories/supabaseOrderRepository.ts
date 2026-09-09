@@ -34,6 +34,8 @@ interface OrderRow {
   customer_email: string | null;
   customer_phone: string | null;
   customer_contact_person: string | null;
+  subtotal_amount_cents: number | string | null;
+  discount_amount_cents: number | string | null;
   total_amount_cents: number | string;
   notes: string | null;
   orcagraf_quote_id?: string | null;
@@ -51,7 +53,8 @@ interface OrderRow {
 const ORDER_SELECT = `
   id, organization_id, order_number, origin, status,
   customer_snapshot_id, customer_name, customer_document, customer_email,
-  customer_phone, customer_contact_person, total_amount_cents, notes,
+  customer_phone, customer_contact_person,
+  subtotal_amount_cents, discount_amount_cents, total_amount_cents, notes,
   orcagraf_quote_id, seller_id, seller_name, commission_rate_percent, commission_amount_cents,
   delivery_date, created_at, updated_at, data_origin,
   arteflow_order_items (
@@ -106,6 +109,12 @@ function mapOrder(row: OrderRow): Order {
       contactPerson: row.customer_contact_person ?? undefined,
     },
     items: [...(row.arteflow_order_items ?? [])].sort((a, b) => a.position - b.position).map(mapItem),
+    subtotalAmountCents: row.subtotal_amount_cents !== null && row.subtotal_amount_cents !== undefined
+      ? safeInteger(row.subtotal_amount_cents, 'subtotal_amount_cents')
+      : undefined,
+    discountAmountCents: row.discount_amount_cents !== null && row.discount_amount_cents !== undefined
+      ? safeInteger(row.discount_amount_cents, 'discount_amount_cents')
+      : undefined,
     totalAmountCents: safeInteger(row.total_amount_cents, 'total_amount_cents'),
     status: row.status,
     notes: row.notes ?? undefined,

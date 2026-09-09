@@ -89,6 +89,8 @@ export interface Order {
   origin: OrderOrigin;
   customer: CustomerSnapshot;
   items: OrderItem[];
+  subtotalAmountCents?: number;
+  discountAmountCents?: number;
   totalAmountCents: number;
   status: OrderStatus;
   notes?: string;

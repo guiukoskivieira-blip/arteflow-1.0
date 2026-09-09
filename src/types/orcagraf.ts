@@ -22,6 +22,11 @@ export interface OrcagrafQuote {
   customerEmail?: string;
   customerPhone?: string;
   customerContactPerson?: string;
+  subtotalAmountCents?: number;
+  discountType?: string;
+  discountValue?: number;
+  discountAppliedCents?: number;
+  discountReason?: string;
   totalAmountCents: number;
   deliveryDate?: string;
   notes?: string;
